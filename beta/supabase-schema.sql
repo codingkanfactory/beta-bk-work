@@ -278,7 +278,7 @@ begin
 
   insert into public.school_members (school_id, user_id, role)
   values (selected_school.id, current_user_id, 'bk')
-  on conflict (school_id, user_id) do nothing;
+  on conflict do nothing;
 
   return query select selected_school.id, selected_school.name;
 end;
