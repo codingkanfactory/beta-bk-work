@@ -1124,6 +1124,7 @@ button:active,.drawer-item:active { transform:scale(.98); }
     <div class="field" id="loginEmailField"><label class="auth-field-label" for="loginEmail">Email</label><input type="email" id="loginEmail" placeholder="nama@sekolah.sch.id" autocomplete="username" onkeypress="if(event.key==='Enter')login()"></div>
     <div class="field" id="loginPasswordField"><label class="auth-field-label" for="loginPassword">Password</label><input type="password" id="loginPassword" placeholder="Password akun" autocomplete="current-password" onkeypress="if(event.key==='Enter')login()"></div>
     <div class="field"><label class="auth-field-label" for="loginNpsn">NPSN Sekolah</label><input type="text" id="loginNpsn" placeholder="8 angka NPSN" aria-label="NPSN sekolah" autocomplete="off" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,8)" onkeypress="if(event.key==='Enter')login()"></div>
+    <div class="field" id="loginInviteField" hidden><label class="auth-field-label" for="loginInviteCode">Kode undangan admin</label><input type="text" id="loginInviteCode" placeholder="Minta kepada pengelola sekolah" autocomplete="off" autocapitalize="characters" onkeypress="if(event.key==='Enter')login()"></div>
     <p class="login-school-note" id="loginSchoolNote" hidden aria-live="polite"></p>
     <div class="auth-inline-message" id="loginAuthMessage" role="alert" aria-live="assertive" hidden></div>
     <button class="btn btn-ghost btn-full" id="resendVerificationBtn" type="button" onclick="resendLoginVerification()" hidden style="margin:0 0 8px;">Kirim ulang email verifikasi</button>
@@ -2472,6 +2473,7 @@ function setLoginBusy(busy) {
   const email = document.getElementById('loginEmail');
   const password = document.getElementById('loginPassword');
   const npsn = document.getElementById('loginNpsn');
+  const inviteCode = document.getElementById('loginInviteCode');
   const progress = document.getElementById('loginProgress');
   if (button) {
     button.disabled = busy;
@@ -2484,6 +2486,7 @@ function setLoginBusy(busy) {
   if (email) email.disabled = busy || Boolean(authenticatedUser);
   if (password) password.disabled = busy || Boolean(authenticatedUser);
   if (npsn) npsn.disabled = busy;
+  if (inviteCode) inviteCode.disabled = busy;
   if (progress) {
     if (busy) progress.hidden = false;
     progress.setAttribute('aria-busy', String(busy));
@@ -2515,7 +2518,7 @@ function getSupabaseAuthMessage(error) {
     return 'NPSN belum terdaftar. Periksa 8 angka NPSN atau hubungi pengelola sekolah.';
   }
   if (lower.includes('42501') || lower.includes('kode undangan admin tidak cocok')) {
-    return 'Kode undangan admin tidak cocok. Minta kode yang benar kepada pengelola sekolah.';
+    return 'NPSN ditemukan, tetapi akun belum tertaut. Masukkan kode undangan admin yang diberikan pengelola sekolah.';
   }
   if (lower.includes('ambiguous') || lower.includes('column reference')) {
     return 'Database mengalami kesalahan saat memeriksa sekolah. Detail teknis tersedia di bawah untuk dilaporkan.';
@@ -2607,6 +2610,7 @@ function showLoginGate(user = null) {
   const email = document.getElementById('loginEmail');
   const password = document.getElementById('loginPassword');
   const npsn = document.getElementById('loginNpsn');
+  const inviteCode = document.getElementById('loginInviteCode');
   const note = document.getElementById('loginSchoolNote');
   const changeAccount = document.getElementById('loginChangeAccount');
   appWrap.style.display = 'none';
@@ -2618,6 +2622,9 @@ function showLoginGate(user = null) {
   if (email) { email.disabled = Boolean(user); if (user) email.value = user.email || ''; }
   if (password) { password.value = ''; password.disabled = Boolean(user); }
   if (npsn) { npsn.value = ''; npsn.disabled = false; }
+  if (inviteCode) { inviteCode.value = ''; inviteCode.disabled = false; }
+  const inviteField = document.getElementById('loginInviteField');
+  if (inviteField) inviteField.hidden = true;
   setAuthMessage('loginAuthMessage', '');
   const resendButton = document.getElementById('resendVerificationBtn');
   if (resendButton) resendButton.hidden = true;
@@ -2777,7 +2784,7 @@ async function resendLoginVerification() {
   else reportAuthIssue('loginAuthMessage', 'Link verifikasi belum berhasil dikirim. Periksa detail dan coba lagi.', result.error, 'Kirim ulang verifikasi');
 }
 
-async function resolveSchoolAccess(user, npsn) {
+async function resolveSchoolAccess(user, npsn, inviteCode = '') {
   const requestRevision = authRevision;
   const fail = () => { throw new Error('NPSN tidak ditemukan atau tidak cocok dengan akun ini.'); };
   const normalizedNpsn = normalizeNpsn(npsn);
@@ -2786,7 +2793,7 @@ async function resolveSchoolAccess(user, npsn) {
   const school = await claimSchoolMembership(
     normalizedNpsn,
     user.user_metadata?.full_name || user.email || 'Admin',
-    user.user_metadata?.school_invite_code || ''
+    normalizeInviteCode(inviteCode) || user.user_metadata?.school_invite_code || ''
   );
   if (requestRevision !== authRevision || authenticatedUser?.id !== user.id) fail();
   const claimedSchoolId = school?.id;
@@ -2813,6 +2820,7 @@ async function login() {
   if (npsnInput) npsnInput.value = npsn;
   const email = document.getElementById('loginEmail').value.trim();
   const pass  = document.getElementById('loginPassword').value;
+  const inviteCode = document.getElementById('loginInviteCode')?.value || '';
   setAuthMessage('loginAuthMessage', '');
   const resendButton = document.getElementById('resendVerificationBtn');
   if (resendButton) resendButton.hidden = true;
@@ -2847,7 +2855,7 @@ async function login() {
     updateLoginProgress(1, 'Akun terverifikasi. Memeriksa NPSN sekolah...');
     failedStage = 2;
     updateLoginProgress(2, 'Memastikan keanggotaan sekolah...');
-    const school = await resolveSchoolAccess(user, npsn);
+    const school = await resolveSchoolAccess(user, npsn, inviteCode);
     updateLoginProgress(3, `Akses ${school.name} terverifikasi. Menyiapkan sesi...`);
     showApp();
   } catch(error) {
@@ -2865,6 +2873,16 @@ async function login() {
       setAuthMessage('loginAuthMessage', getSupabaseAuthMessage(error));
       if (resendButton) resendButton.hidden = false;
       updateLoginProgress(failedStage, 'Email belum diverifikasi. Periksa email atau kirim ulang link.', true);
+      return;
+    }
+
+    const requiresInvite = errorCode === '42501' || String(error?.message || '').toLowerCase().includes('kode undangan admin tidak cocok');
+    if (requiresInvite) {
+      const inviteField = document.getElementById('loginInviteField');
+      if (inviteField) inviteField.hidden = false;
+      updateLoginProgress(failedStage, 'Sekolah ditemukan. Perlu kode undangan untuk menautkan akun ini.', true);
+      reportAuthIssue('loginAuthMessage', getSupabaseAuthMessage(error), error, 'Tautkan akun ke sekolah');
+      document.getElementById('loginInviteCode')?.focus();
       return;
     }
 
