@@ -1117,6 +1117,21 @@ button:active,.drawer-item:active { transform:scale(.98); }
     <p class="login-school-note" id="loginSchoolNote" hidden aria-live="polite"></p>
     <button class="btn btn-primary btn-full" id="loginSubmit" onclick="login()"><i data-lucide="arrow-right" style="width:16px;height:16px;"></i> Masuk</button>
     <button class="btn btn-ghost btn-full" id="loginChangeAccount" onclick="switchLoginAccount()" style="display:none;margin-top:8px;">Ganti akun</button>
+
+    <div id="adminCreatePanel" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--c-border);">
+      <div class="field"><input type="text" id="newAdminName" placeholder="Nama lengkap admin" autocomplete="name"></div>
+      <div class="field"><input type="email" id="newAdminEmail" placeholder="Email admin baru" autocomplete="email"></div>
+      <div class="field"><input type="text" id="newAdminSchoolCode" placeholder="Kode sekolah" autocomplete="organization" autocapitalize="characters" maxlength="40"></div>
+      <div class="field"><input type="password" id="newAdminPassword" placeholder="Password" autocomplete="new-password"></div>
+      <div class="field"><input type="password" id="newAdminConfirmPassword" placeholder="Konfirmasi password" autocomplete="new-password"></div>
+      <button class="btn btn-primary btn-full" type="button" onclick="createAdminAccountFromLoginPage()">Buat akun admin baru</button>
+      <button class="btn btn-ghost btn-full" type="button" onclick="toggleAdminCreatePanel(false)" style="margin-top:8px;">Batal</button>
+    </div>
+
+    <div style="margin-top:12px; text-align:center;">
+      <button type="button" class="btn btn-ghost btn-full" onclick="toggleAdminCreatePanel(true)" id="showCreateAdminBtn" style="background:transparent;border:1px solid var(--c-border);">Buat akun admin baru</button>
+    </div>
+
     <div class="login-progress" id="loginProgress" hidden aria-live="polite" aria-busy="false">
       <div class="login-progress-head"><span class="login-spinner" id="loginSpinner"></span><span id="loginProgressTitle">Menyiapkan login</span></div>
       <ol class="login-steps">
@@ -2456,6 +2471,60 @@ function setLoginBusy(busy) {
   }
 }
 
+function getSupabaseAuthMessage(error) {
+  const message = (error && error.message) ? String(error.message) : 'Login tidak berhasil.';
+  const lower = message.toLowerCase();
+  if (lower.includes('email not confirmed') || lower.includes('email_not_confirmed') || lower.includes('user is not confirmed')) {
+    return 'Email belum dikonfirmasi. Buka email Anda dan klik link verifikasi, atau kirim ulang link verifikasi dari tombol berikut.';
+  }
+  if (lower.includes('invalid login credentials') || lower.includes('invalid email or password') || lower.includes('wrong password')) {
+    return 'Email atau password salah.';
+  }
+  if (lower.includes('user not found') || lower.includes('no user found')) {
+    return 'Akun tidak ditemukan. Periksa kembali email yang Anda masukkan.';
+  }
+  if (lower.includes('pgrst202') || lower.includes('lookup_school_by_code') || lower.includes('claim_school_membership')) {
+    return 'Fitur pendaftaran sekolah belum aktif di database. Jalankan beta/supabase-schema.sql di Supabase SQL Editor, lalu coba lagi.';
+  }
+  if (lower.includes('school_code') && lower.includes('not found')) {
+    return 'Kode sekolah tidak ditemukan atau belum terdaftar dalam sistem.';
+  }
+  return message;
+}
+
+function normalizeSchoolCode(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+async function lookupSchoolByCode(schoolCode) {
+  const { data, error } = await supabaseClient.rpc('lookup_school_by_code', {
+    p_school_code: normalizeSchoolCode(schoolCode)
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data[0] || null : data || null;
+}
+
+async function claimSchoolMembership(schoolCode, fullName) {
+  const { data, error } = await supabaseClient.rpc('claim_school_membership', {
+    p_school_code: normalizeSchoolCode(schoolCode),
+    p_full_name: String(fullName || '').trim() || null
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data[0] || null : data || null;
+}
+
+async function resendVerificationEmail(email) {
+  if (!email) return false;
+  try {
+    const {error} = await supabaseClient.auth.resend({ type: 'signup', email });
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Resend confirmation failed:', error);
+    return false;
+  }
+}
+
 function showLoginGate(user = null) {
   const loginWrap = document.getElementById('loginWrap');
   const appWrap = document.getElementById('appWrap');
@@ -2500,25 +2569,126 @@ function showAuthenticatedSchoolGate(user) {
   document.getElementById('loginChangeAccount').style.display = 'flex';
 }
 
+function toggleAdminCreatePanel(show) {
+  const panel = document.getElementById('adminCreatePanel');
+  const btn = document.getElementById('showCreateAdminBtn');
+  if (panel) panel.style.display = show ? 'block' : 'none';
+  if (btn) btn.style.display = show ? 'none' : 'block';
+}
+
+function mapAdminRoleToSchoolRole(role) {
+  switch (role) {
+    case 'super_admin': return 'owner';
+    case 'admin':
+    case 'bk_manager': return 'bk';
+    default: return 'bk';
+  }
+}
+
+async function createAdminAccountFromLoginPage() {
+  if (authenticatedUser) {
+    swal('Keluar Terlebih Dahulu', 'Keluar dari akun yang aktif sebelum membuat akun admin baru agar sesi tidak tertukar.', 'warning');
+    return;
+  }
+
+  const getValue = (id) => document.getElementById(id)?.value ?? '';
+  const payload = {
+    name: getValue('newAdminName').trim(),
+    email: getValue('newAdminEmail').trim(),
+    schoolCode: normalizeSchoolCode(getValue('newAdminSchoolCode')),
+    password: getValue('newAdminPassword'),
+    confirmPassword: getValue('newAdminConfirmPassword')
+  };
+
+  if (!payload.name || !payload.email || !payload.schoolCode || !payload.password || !payload.confirmPassword) {
+    swal('Lengkapi Form', 'Semua field wajib diisi untuk membuat akun admin baru.', 'warning');
+    return;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+    swal('Email Tidak Valid', 'Format email tidak cocok.', 'error');
+    return;
+  }
+
+  if (payload.password.length < 8) {
+    swal('Password Terlalu Pendek', 'Password minimal 8 karakter.', 'warning');
+    return;
+  }
+
+  if (payload.password !== payload.confirmPassword) {
+    swal('Password Tidak Cocok', 'Konfirmasi password harus sama.', 'error');
+    return;
+  }
+
+  try {
+    const school = await lookupSchoolByCode(payload.schoolCode);
+    if (!school?.id) {
+      swal('Kode Sekolah Tidak Ditemukan', 'Periksa kembali kode sekolah. Akun belum dibuat.', 'error');
+      return;
+    }
+
+    const signUpResult = await supabaseClient.auth.signUp({
+      email: payload.email.toLowerCase(),
+      password: payload.password,
+      options: {
+        data: {
+          full_name: payload.name,
+          school_code: payload.schoolCode
+        }
+      }
+    });
+
+    if (signUpResult.error) throw signUpResult.error;
+
+    const user = signUpResult.data?.user;
+    if (!user) throw new Error('Akun baru tidak dibuat oleh Supabase.');
+
+    if (signUpResult.data?.session) {
+      await claimSchoolMembership(payload.schoolCode, payload.name);
+    }
+
+    const confirmationRequired = !signUpResult.data?.session;
+    swal(
+      confirmationRequired ? 'Periksa Email Anda' : 'Akun Admin Berhasil Dibuat',
+      confirmationRequired
+        ? 'Akun sudah dibuat. Klik link verifikasi di email, lalu login dengan email, password, dan kode sekolah yang sama.'
+        : `Akun berhasil terhubung ke ${school.name}. Silakan login untuk melanjutkan.`,
+      'success'
+    );
+    toggleAdminCreatePanel(false);
+    ['newAdminName','newAdminEmail','newAdminSchoolCode','newAdminPassword','newAdminConfirmPassword']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  } catch (error) {
+    console.error('createAdminAccountFromLoginPage error:', error);
+    swal('Gagal Membuat Akun', error?.message || 'Terjadi kesalahan saat membuat akun admin.', 'error');
+  }
+}
+
 async function resolveSchoolAccess(user, code) {
   const requestRevision = authRevision;
-  const fail = () => { throw new Error('Kode sekolah tidak ditemukan atau akun ini bukan anggota sekolah tersebut.'); };
-  if (!user || authenticatedUser?.id !== user.id) fail();
-  const {data: school, error: schoolError} = await supabaseClient.from('schools')
-    .select('id,name').eq('school_code', code).maybeSingle();
+  const fail = () => { throw new Error('Kode sekolah tidak ditemukan atau tidak cocok dengan akun ini.'); };
+  const normalizedCode = normalizeSchoolCode(code);
+  if (!user || !user.id || authenticatedUser?.id !== user.id) fail();
+  const school = await claimSchoolMembership(
+    normalizedCode,
+    user.user_metadata?.full_name || user.email || 'Admin'
+  );
   if (requestRevision !== authRevision || authenticatedUser?.id !== user.id) fail();
-  if (schoolError) throw new Error('Tidak dapat memverifikasi sekolah. Periksa koneksi lalu coba lagi.');
-  if (!school?.id) fail();
+  const claimedSchoolId = school?.school_id || school?.id;
+  if (!claimedSchoolId) fail();
 
   const {data: membership, error: memberError} = await supabaseClient.from('school_members')
-    .select('school_id').eq('school_id', school.id).eq('user_id', user.id).maybeSingle();
+    .select('school_id,role').eq('school_id', claimedSchoolId).eq('user_id', user.id).maybeSingle();
   if (requestRevision !== authRevision || authenticatedUser?.id !== user.id) fail();
   if (memberError) throw new Error('Tidak dapat memverifikasi keanggotaan sekolah. Coba lagi.');
-  if (membership?.school_id !== school.id) fail();
+  if (membership?.school_id !== claimedSchoolId) fail();
+  if (!['owner', 'bk'].includes(membership.role)) {
+    throw new Error('Akun ini hanya memiliki akses lihat. Hubungi pemilik sekolah untuk meningkatkan akses.');
+  }
 
-  activeSchoolId = school.id;
-  activeSchoolName = school.name;
-  return school;
+  activeSchoolId = claimedSchoolId;
+  activeSchoolName = school.school_name || school.name;
+  return { id: activeSchoolId, name: activeSchoolName };
 }
 
 async function login() {
@@ -2554,7 +2724,8 @@ async function login() {
     updateLoginProgress(3, `Akses ${school.name} terverifikasi. Menyiapkan sesi...`);
     showApp();
   } catch(error) {
-    updateLoginProgress(failedStage, error.message || 'Login tidak berhasil. Coba lagi.', true);
+    const authError = getSupabaseAuthMessage(error);
+    updateLoginProgress(failedStage, authError, true);
     setLoginBusy(false);
     const note = document.getElementById('loginSchoolNote');
     if (authenticatedUser && note) {
@@ -2562,7 +2733,34 @@ async function login() {
       note.textContent = `${authenticatedUser.email || 'Sesi aktif'}: masukkan kode sekolah yang terdaftar pada akun ini.`;
       showAuthenticatedSchoolGate(authenticatedUser);
     }
-    swal(failedStage === 1 ? 'Login Gagal' : 'Sekolah Tidak Cocok', error.message || 'Tidak dapat memverifikasi akses.', 'error');
+
+    const errorCode = String(error?.code || '').toLowerCase();
+    const isUnconfirmedEmail = errorCode === 'email_not_confirmed' || String(error?.message || '').toLowerCase().includes('email not confirmed');
+    if (isUnconfirmedEmail) {
+      const email = document.getElementById('loginEmail').value.trim();
+      const result = await swal({
+        title: 'Login Gagal',
+        text: authError,
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonText: 'Kirim Ulang Email',
+        cancelButtonText: 'Tutup',
+        confirmButtonColor: '#0fba9d'
+      });
+      if (result.isConfirmed) {
+        const sent = await resendVerificationEmail(email);
+        swal(
+          sent ? 'Link Verifikasi Terkirim' : 'Gagal Mengirim Ulang',
+          sent
+            ? 'Silakan cek inbox email Anda dan klik link verifikasi.'
+            : 'Tidak dapat mengirim ulang email verifikasi. Pastikan akun Anda memiliki email yang benar.',
+          sent ? 'success' : 'error'
+        );
+      }
+      return;
+    }
+
+    swal(failedStage === 1 ? 'Login Gagal' : 'Sekolah Tidak Cocok', authError || 'Tidak dapat memverifikasi akses.', 'error');
   }
 }
 

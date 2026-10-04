@@ -229,6 +229,64 @@ returns boolean language sql security definer stable set search_path = public as
   select exists (select 1 from school_members where school_id = target_school and user_id = auth.uid() and role in ('owner', 'bk'));
 $$;
 
+create or replace function public.lookup_school_by_code(p_school_code text)
+returns table(id uuid, name text)
+language sql
+security definer
+stable
+set search_path = public, pg_temp
+as $$
+  select s.id, s.name
+  from public.schools s
+  where s.school_code = upper(btrim(coalesce(p_school_code, '')))
+  limit 1;
+$$;
+
+revoke all on function public.lookup_school_by_code(text) from public;
+grant execute on function public.lookup_school_by_code(text) to anon, authenticated;
+
+create or replace function public.claim_school_membership(p_school_code text, p_full_name text default null)
+returns table(school_id uuid, school_name text)
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  current_email text := coalesce(auth.jwt() ->> 'email', '');
+  selected_school public.schools%rowtype;
+  safe_name text := nullif(btrim(coalesce(p_full_name, '')), '');
+begin
+  if current_user_id is null then
+    raise exception 'Silakan login setelah memverifikasi email.' using errcode = '28000';
+  end if;
+
+  select * into selected_school
+  from public.schools
+  where school_code = upper(btrim(coalesce(p_school_code, '')))
+  limit 1;
+
+  if selected_school.id is null then
+    raise exception 'Kode sekolah tidak ditemukan. Periksa kembali kode dari sekolah.' using errcode = 'P0002';
+  end if;
+
+  insert into public.profiles (id, full_name, email)
+  values (current_user_id, coalesce(safe_name, nullif(current_email, ''), 'Admin'), current_email)
+  on conflict (id) do update
+    set full_name = coalesce(nullif(excluded.full_name, ''), public.profiles.full_name),
+        email = coalesce(nullif(excluded.email, ''), public.profiles.email);
+
+  insert into public.school_members (school_id, user_id, role)
+  values (selected_school.id, current_user_id, 'bk')
+  on conflict (school_id, user_id) do nothing;
+
+  return query select selected_school.id, selected_school.name;
+end;
+$$;
+
+revoke all on function public.claim_school_membership(text, text) from public, anon;
+grant execute on function public.claim_school_membership(text, text) to authenticated;
+
 -- Preserve existing credentials, then remove them from member-readable student rows.
 do $$
 begin
