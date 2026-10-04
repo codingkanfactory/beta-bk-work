@@ -314,7 +314,7 @@ begin
 
   insert into public.profiles (id, full_name, email)
   values (current_user_id, coalesce(safe_name, nullif(current_email, ''), 'Admin'), current_email)
-  on conflict (id) do update
+  on conflict on constraint profiles_pkey do update
     set full_name = coalesce(nullif(excluded.full_name, ''), public.profiles.full_name),
         email = coalesce(nullif(excluded.email, ''), public.profiles.email);
 
