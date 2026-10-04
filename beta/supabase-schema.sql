@@ -7,6 +7,7 @@ create table if not exists schools (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   school_code text,
+  npsn text,
   address text default '',
   principal_name text default '',
   principal_nip text default '',
@@ -19,9 +20,18 @@ create table if not exists schools (
 );
 
 alter table public.schools add column if not exists school_code text;
+alter table public.schools add column if not exists npsn text;
 update public.schools
 set school_code = upper(btrim(school_code))
 where school_code is not null and btrim(school_code) <> '';
+update public.schools
+set npsn = btrim(npsn)
+where npsn is not null;
+update public.schools
+set npsn = school_code
+where npsn is null and school_code ~ '^[0-9]{8}$';
+create unique index if not exists schools_npsn_key
+  on public.schools (npsn) where npsn is not null;
 
 do $$
 declare
@@ -54,8 +64,10 @@ begin
   end if;
 end $$;
 create unique index if not exists schools_school_code_key on public.schools (school_code);
--- A trusted administrator can distribute the generated codes with:
--- select id, name, school_code from public.schools order by name;
+-- A trusted administrator can review school NPSNs with:
+-- select id, name, npsn, school_code as admin_invite_code from public.schools order by name;
+-- Existing schools with generated codes need an NPSN before login is enabled:
+-- update public.schools set npsn = '12345678' where id = 'school-uuid';
 
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -229,7 +241,11 @@ returns boolean language sql security definer stable set search_path = public as
   select exists (select 1 from school_members where school_id = target_school and user_id = auth.uid() and role in ('owner', 'bk'));
 $$;
 
-create or replace function public.lookup_school_by_code(p_school_code text)
+drop function if exists public.lookup_school_by_code(text);
+drop function if exists public.lookup_school_by_npsn(text);
+drop function if exists public.lookup_school_by_npsn(text, text);
+
+create function public.lookup_school_by_npsn(p_npsn text, p_invite_code text)
 returns table(id uuid, name text)
 language sql
 security definer
@@ -238,16 +254,23 @@ set search_path = public, pg_temp
 as $$
   select s.id, s.name
   from public.schools s
-  where s.school_code = upper(btrim(coalesce(p_school_code, '')))
+  where s.npsn ~ '^[0-9]{8}$'
+    and s.npsn = regexp_replace(btrim(coalesce(p_npsn, '')), '[^0-9]', '', 'g')
+    and s.school_code = upper(btrim(coalesce(p_invite_code, '')))
   limit 1;
 $$;
 
-revoke all on function public.lookup_school_by_code(text) from public;
-grant execute on function public.lookup_school_by_code(text) to anon, authenticated;
+revoke all on function public.lookup_school_by_npsn(text, text) from public;
+grant execute on function public.lookup_school_by_npsn(text, text) to anon, authenticated;
 
 drop function if exists public.claim_school_membership(text, text);
+drop function if exists public.claim_school_membership(text, text, text);
 
-create function public.claim_school_membership(p_school_code text, p_full_name text default null)
+create function public.claim_school_membership(
+  p_npsn text,
+  p_full_name text default null,
+  p_invite_code text default null
+)
 returns table(id uuid, name text)
 language plpgsql
 security definer
@@ -257,19 +280,36 @@ declare
   current_user_id uuid := auth.uid();
   current_email text := coalesce(auth.jwt() ->> 'email', '');
   selected_school public.schools%rowtype;
+  normalized_npsn text := regexp_replace(btrim(coalesce(p_npsn, '')), '[^0-9]', '', 'g');
   safe_name text := nullif(btrim(coalesce(p_full_name, '')), '');
 begin
   if current_user_id is null then
     raise exception 'Silakan login setelah memverifikasi email.' using errcode = '28000';
   end if;
 
+  if normalized_npsn !~ '^[0-9]{8}$' then
+    raise exception 'NPSN harus terdiri dari tepat 8 angka.' using errcode = '22023';
+  end if;
+
   select * into selected_school
   from public.schools
-  where school_code = upper(btrim(coalesce(p_school_code, '')))
+  where npsn = normalized_npsn
   limit 1;
 
   if selected_school.id is null then
-    raise exception 'Kode sekolah tidak ditemukan. Periksa kembali kode dari sekolah.' using errcode = 'P0002';
+    raise exception 'NPSN tidak ditemukan. Periksa NPSN sekolah.' using errcode = 'P0002';
+  end if;
+
+  if exists (
+    select 1 from public.school_members
+    where school_id = selected_school.id and user_id = current_user_id
+  ) then
+    return query select selected_school.id, selected_school.name;
+    return;
+  end if;
+
+  if upper(btrim(coalesce(p_invite_code, ''))) <> selected_school.school_code then
+    raise exception 'Kode undangan admin tidak cocok. Minta kode terbaru kepada pengelola sekolah.' using errcode = '42501';
   end if;
 
   insert into public.profiles (id, full_name, email)
@@ -286,8 +326,8 @@ begin
 end;
 $$;
 
-revoke all on function public.claim_school_membership(text, text) from public, anon;
-grant execute on function public.claim_school_membership(text, text) to authenticated;
+revoke all on function public.claim_school_membership(text, text, text) from public, anon;
+grant execute on function public.claim_school_membership(text, text, text) to authenticated;
 
 -- Preserve existing credentials, then remove them from member-readable student rows.
 do $$

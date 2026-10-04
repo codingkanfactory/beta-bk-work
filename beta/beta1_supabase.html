@@ -94,6 +94,16 @@ input,textarea,select{font-family:inherit;}
 .login-progress .login-progress-detail{margin:10px 0 0 23px;text-align:left;}
 @keyframes stepPulse{50%{box-shadow:0 0 0 5px rgba(15,186,157,.05);}}
 .login-school-note{margin:-14px 0 14px;text-align:left!important;font-size:12px!important;line-height:1.5;}
+.auth-field-label{display:block;margin:0 0 6px;color:var(--c-sub);font-size:12px;font-weight:700;}
+.auth-inline-message{display:grid;gap:8px;margin:12px 0;padding:12px;border:1px solid var(--c-border);border-radius:8px;background:var(--c-muted);font-size:13px;line-height:1.5;}
+.auth-inline-message[hidden]{display:none;}
+.auth-inline-message[data-kind="error"]{border-color:#fca5a5;background:#fef2f2;color:#991b1b;}
+.auth-inline-message[data-kind="success"]{border-color:#86efac;background:#f0fdf4;color:#166534;}
+.auth-inline-message details{font-size:11px;}
+.auth-inline-message pre{max-height:120px;overflow:auto;margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font:11px 'Fira Code',monospace;}
+.auth-helper-text{margin:-5px 0 14px;color:var(--c-sub);font-size:12px;line-height:1.5;}
+[data-theme="dark"] .auth-inline-message[data-kind="error"]{border-color:#7f1d1d;background:#2b151a;color:#fecaca;}
+[data-theme="dark"] .auth-inline-message[data-kind="success"]{border-color:#14532d;background:#10271b;color:#bbf7d0;}
 .school-context{display:flex;align-items:center;gap:7px;min-width:0;padding:0 8px;border:1px solid var(--c-border);border-radius:10px;background:var(--c-bg);}
 .school-context[hidden]{display:none;}
 .school-context-name{max-width:135px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;color:var(--c-text);}
@@ -1109,28 +1119,17 @@ button:active,.drawer-item:active { transform:scale(.98); }
 <div id="loginWrap">
   <div class="login-box">
     <div class="login-logo"><i data-lucide="shield-check" style="width:28px;height:28px;color:var(--cta-foreground);"></i></div>
-    <h1>Admin Login</h1>
-    <p>Masuk ke sistem manajemen poin siswa — BK</p>
-    <div class="field" id="loginEmailField"><input type="email" id="loginEmail" placeholder="Email admin" autocomplete="username" onkeypress="if(event.key==='Enter')login()"></div>
-    <div class="field" id="loginPasswordField"><input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" onkeypress="if(event.key==='Enter')login()"></div>
-    <div class="field"><input type="text" id="loginSchoolCode" placeholder="Kode sekolah" aria-label="Kode sekolah" autocomplete="organization" autocapitalize="characters" maxlength="40" onkeypress="if(event.key==='Enter')login()"></div>
+    <h1>Masuk Admin</h1>
+    <p>Masukkan email, password, dan NPSN sekolah.</p>
+    <div class="field" id="loginEmailField"><label class="auth-field-label" for="loginEmail">Email</label><input type="email" id="loginEmail" placeholder="nama@sekolah.sch.id" autocomplete="username" onkeypress="if(event.key==='Enter')login()"></div>
+    <div class="field" id="loginPasswordField"><label class="auth-field-label" for="loginPassword">Password</label><input type="password" id="loginPassword" placeholder="Password akun" autocomplete="current-password" onkeypress="if(event.key==='Enter')login()"></div>
+    <div class="field"><label class="auth-field-label" for="loginNpsn">NPSN Sekolah</label><input type="text" id="loginNpsn" placeholder="8 angka NPSN" aria-label="NPSN sekolah" autocomplete="off" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,8)" onkeypress="if(event.key==='Enter')login()"></div>
     <p class="login-school-note" id="loginSchoolNote" hidden aria-live="polite"></p>
+    <div class="auth-inline-message" id="loginAuthMessage" role="alert" aria-live="assertive" hidden></div>
+    <button class="btn btn-ghost btn-full" id="resendVerificationBtn" type="button" onclick="resendLoginVerification()" hidden style="margin:0 0 8px;">Kirim ulang email verifikasi</button>
     <button class="btn btn-primary btn-full" id="loginSubmit" onclick="login()"><i data-lucide="arrow-right" style="width:16px;height:16px;"></i> Masuk</button>
     <button class="btn btn-ghost btn-full" id="loginChangeAccount" onclick="switchLoginAccount()" style="display:none;margin-top:8px;">Ganti akun</button>
-
-    <div id="adminCreatePanel" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--c-border);">
-      <div class="field"><input type="text" id="newAdminName" placeholder="Nama lengkap admin" autocomplete="name"></div>
-      <div class="field"><input type="email" id="newAdminEmail" placeholder="Email admin baru" autocomplete="email"></div>
-      <div class="field"><input type="text" id="newAdminSchoolCode" placeholder="Kode sekolah" autocomplete="organization" autocapitalize="characters" maxlength="40"></div>
-      <div class="field"><input type="password" id="newAdminPassword" placeholder="Password" autocomplete="new-password"></div>
-      <div class="field"><input type="password" id="newAdminConfirmPassword" placeholder="Konfirmasi password" autocomplete="new-password"></div>
-      <button class="btn btn-primary btn-full" type="button" onclick="createAdminAccountFromLoginPage()">Buat akun admin baru</button>
-      <button class="btn btn-ghost btn-full" type="button" onclick="toggleAdminCreatePanel(false)" style="margin-top:8px;">Batal</button>
-    </div>
-
-    <div style="margin-top:12px; text-align:center;">
-      <button type="button" class="btn btn-ghost btn-full" onclick="toggleAdminCreatePanel(true)" id="showCreateAdminBtn" style="background:transparent;border:1px solid var(--c-border);">Buat akun admin baru</button>
-    </div>
+    <button class="btn btn-ghost btn-full" type="button" id="showCreateAdminBtn" onclick="openAdminCreateDialog()" style="margin-top:8px;background:transparent;border:1px solid var(--c-border);">Buat akun admin baru</button>
 
     <div class="login-progress" id="loginProgress" hidden aria-live="polite" aria-busy="false">
       <div class="login-progress-head"><span class="login-spinner" id="loginSpinner"></span><span id="loginProgressTitle">Menyiapkan login</span></div>
@@ -1143,6 +1142,26 @@ button:active,.drawer-item:active { transform:scale(.98); }
       <p class="login-progress-detail" id="loginProgressDetail">Mohon tunggu...</p>
     </div>
   </div>
+</div>
+
+<div class="modal-overlay" id="adminCreateModal" aria-hidden="true" onclick="if(event.target===this)closeAdminCreateDialog()">
+  <section class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="adminCreateTitle" aria-describedby="adminCreateHelp">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;">
+      <h2 class="modal-title" id="adminCreateTitle" style="margin:0;">Buat akun admin</h2>
+      <button class="icon-btn" type="button" onclick="closeAdminCreateDialog()" aria-label="Tutup dialog"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
+    </div>
+    <p class="auth-helper-text" id="adminCreateHelp">Gunakan email aktif. Link verifikasi akan dikirim jika diwajibkan.</p>
+    <div class="field"><label class="auth-field-label" for="newAdminName">Nama lengkap</label><input type="text" id="newAdminName" placeholder="Nama admin" autocomplete="name"></div>
+    <div class="field"><label class="auth-field-label" for="newAdminEmail">Email</label><input type="email" id="newAdminEmail" placeholder="nama@sekolah.sch.id" autocomplete="email"></div>
+    <div class="field"><label class="auth-field-label" for="newAdminNpsn">NPSN Sekolah</label><input type="text" id="newAdminNpsn" placeholder="8 angka NPSN" autocomplete="off" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,8)"></div>
+    <div class="field"><label class="auth-field-label" for="newAdminInviteCode">Kode undangan admin</label><input type="text" id="newAdminInviteCode" placeholder="Minta kepada pengelola sekolah" autocomplete="off" autocapitalize="characters"></div>
+    <div class="field"><label class="auth-field-label" for="newAdminPassword">Password (minimal 8 karakter)</label><input type="password" id="newAdminPassword" placeholder="Buat password" autocomplete="new-password"></div>
+    <div class="field"><label class="auth-field-label" for="newAdminConfirmPassword">Ulangi password</label><input type="password" id="newAdminConfirmPassword" placeholder="Ketik ulang password" autocomplete="new-password"></div>
+    <div class="auth-inline-message" id="adminCreateMessage" role="alert" aria-live="assertive" hidden></div>
+    <button class="btn btn-primary btn-full" id="createAdminSubmit" type="button" onclick="createAdminAccountFromLoginPage()">Buat akun</button>
+    <button class="btn btn-ghost btn-full" type="button" onclick="closeAdminCreateDialog()" style="margin-top:8px;">Kembali ke login</button>
+  </section>
 </div>
 
 <!-- ══ APP ════════════════════════════════════════════ -->
@@ -2452,7 +2471,7 @@ function setLoginBusy(busy) {
   const button = document.getElementById('loginSubmit');
   const email = document.getElementById('loginEmail');
   const password = document.getElementById('loginPassword');
-  const schoolCode = document.getElementById('loginSchoolCode');
+  const npsn = document.getElementById('loginNpsn');
   const progress = document.getElementById('loginProgress');
   if (button) {
     button.disabled = busy;
@@ -2464,7 +2483,7 @@ function setLoginBusy(busy) {
   }
   if (email) email.disabled = busy || Boolean(authenticatedUser);
   if (password) password.disabled = busy || Boolean(authenticatedUser);
-  if (schoolCode) schoolCode.disabled = busy;
+  if (npsn) npsn.disabled = busy;
   if (progress) {
     if (busy) progress.hidden = false;
     progress.setAttribute('aria-busy', String(busy));
@@ -2481,47 +2500,102 @@ function getSupabaseAuthMessage(error) {
     return 'Email atau password salah.';
   }
   if (lower.includes('user not found') || lower.includes('no user found')) {
-    return 'Akun tidak ditemukan. Periksa kembali email yang Anda masukkan.';
+    return 'Akun tidak ditemukan. Periksa email atau buat akun admin baru.';
   }
-  if (lower.includes('pgrst202') || lower.includes('lookup_school_by_code') || lower.includes('claim_school_membership')) {
-    return 'Fitur pendaftaran sekolah belum aktif di database. Jalankan beta/supabase-schema.sql di Supabase SQL Editor, lalu coba lagi.';
+  if (lower.includes('already registered') || lower.includes('already been registered')) {
+    return 'Email sudah terdaftar. Silakan masuk dengan akun tersebut.';
   }
-  if (lower.includes('school_code') && lower.includes('not found')) {
-    return 'Kode sekolah tidak ditemukan atau belum terdaftar dalam sistem.';
+  if (lower.includes('pgrst202') || lower.includes('lookup_school_by_npsn') || lower.includes('claim_school_membership')) {
+    return 'Layanan NPSN belum siap di database. Jalankan schema terbaru dari beta/supabase-schema.sql di Supabase SQL Editor.';
   }
-  return message;
+  if (lower.includes('22023') || lower.includes('tepat 8 angka')) {
+    return 'NPSN harus terdiri dari tepat 8 angka.';
+  }
+  if (lower.includes('p0002') || lower.includes('npsn') && lower.includes('tidak ditemukan')) {
+    return 'NPSN belum terdaftar. Periksa 8 angka NPSN atau hubungi pengelola sekolah.';
+  }
+  if (lower.includes('42501') || lower.includes('kode undangan admin tidak cocok')) {
+    return 'Kode undangan admin tidak cocok. Minta kode yang benar kepada pengelola sekolah.';
+  }
+  if (lower.includes('ambiguous') || lower.includes('column reference')) {
+    return 'Database mengalami kesalahan saat memeriksa sekolah. Detail teknis tersedia di bawah untuk dilaporkan.';
+  }
+  if (lower.includes('failed to fetch') || lower.includes('network')) {
+    return 'Tidak dapat terhubung ke server. Periksa koneksi internet lalu coba lagi.';
+  }
+  return 'Proses tidak berhasil. Buka detail teknis di bawah dan laporkan pesan tersebut kepada pengelola.';
 }
 
-function normalizeSchoolCode(value) {
+function setAuthMessage(elementId, message, kind = 'error', diagnostic = '') {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  element.replaceChildren();
+  if (!message) {
+    element.hidden = true;
+    return;
+  }
+  const messageText = document.createElement('div');
+  messageText.textContent = message;
+  element.appendChild(messageText);
+  if (diagnostic) {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    const technicalText = document.createElement('pre');
+    summary.textContent = 'Detail untuk laporan';
+    technicalText.textContent = diagnostic;
+    details.append(summary, technicalText);
+    element.appendChild(details);
+  }
+  element.dataset.kind = kind;
+  element.hidden = false;
+}
+
+function reportAuthIssue(elementId, message, error, context) {
+  console.error(`[${context}]`, error);
+  const diagnostic = [error?.code, error?.message || String(error || '')].filter(Boolean).join(': ');
+  setAuthMessage(elementId, message, 'error', diagnostic || 'Tidak ada detail teknis dari server.');
+}
+
+function normalizeNpsn(value) {
+  return String(value || '').replace(/[^0-9]/g, '').slice(0, 8);
+}
+
+function normalizeInviteCode(value) {
   return String(value || '').trim().toUpperCase();
 }
 
-async function lookupSchoolByCode(schoolCode) {
-  const { data, error } = await supabaseClient.rpc('lookup_school_by_code', {
-    p_school_code: normalizeSchoolCode(schoolCode)
+function isValidNpsn(value) {
+  return /^[0-9]{8}$/.test(normalizeNpsn(value));
+}
+
+async function lookupSchoolByNpsn(npsn, inviteCode) {
+  const { data, error } = await supabaseClient.rpc('lookup_school_by_npsn', {
+    p_npsn: normalizeNpsn(npsn),
+    p_invite_code: normalizeInviteCode(inviteCode)
   });
   if (error) throw error;
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
-async function claimSchoolMembership(schoolCode, fullName) {
+async function claimSchoolMembership(npsn, fullName, inviteCode = '') {
   const { data, error } = await supabaseClient.rpc('claim_school_membership', {
-    p_school_code: normalizeSchoolCode(schoolCode),
-    p_full_name: String(fullName || '').trim() || null
+    p_npsn: normalizeNpsn(npsn),
+    p_full_name: String(fullName || '').trim() || null,
+    p_invite_code: normalizeInviteCode(inviteCode) || null
   });
   if (error) throw error;
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
 async function resendVerificationEmail(email) {
-  if (!email) return false;
+  if (!email) return { sent: false, error: new Error('Email belum diisi.') };
   try {
     const {error} = await supabaseClient.auth.resend({ type: 'signup', email });
     if (error) throw error;
-    return true;
+    return { sent: true, error: null };
   } catch (error) {
     console.error('Resend confirmation failed:', error);
-    return false;
+    return { sent: false, error };
   }
 }
 
@@ -2532,7 +2606,7 @@ function showLoginGate(user = null) {
   const passwordField = document.getElementById('loginPasswordField');
   const email = document.getElementById('loginEmail');
   const password = document.getElementById('loginPassword');
-  const schoolCode = document.getElementById('loginSchoolCode');
+  const npsn = document.getElementById('loginNpsn');
   const note = document.getElementById('loginSchoolNote');
   const changeAccount = document.getElementById('loginChangeAccount');
   appWrap.style.display = 'none';
@@ -2543,12 +2617,17 @@ function showLoginGate(user = null) {
   if (passwordField) passwordField.style.display = user ? 'none' : 'block';
   if (email) { email.disabled = Boolean(user); if (user) email.value = user.email || ''; }
   if (password) { password.value = ''; password.disabled = Boolean(user); }
-  if (schoolCode) { schoolCode.value = ''; schoolCode.disabled = false; }
+  if (npsn) { npsn.value = ''; npsn.disabled = false; }
+  setAuthMessage('loginAuthMessage', '');
+  const resendButton = document.getElementById('resendVerificationBtn');
+  if (resendButton) resendButton.hidden = true;
   if (note) {
     note.hidden = !user;
-    note.textContent = user ? `Sesi ${user.email || 'akun'} aktif. Masukkan kode sekolah yang terdaftar pada akun ini.` : '';
+    note.textContent = user ? `Sesi ${user.email || 'akun'} aktif. Masukkan NPSN sekolah (8 angka).` : '';
   }
   if (changeAccount) changeAccount.style.display = user ? 'flex' : 'none';
+  const createButton = document.getElementById('showCreateAdminBtn');
+  if (createButton) createButton.hidden = Boolean(user);
   const progress = document.getElementById('loginProgress');
   if (progress) progress.hidden = true;
   setLoginBusy(false);
@@ -2565,29 +2644,36 @@ function showAuthenticatedSchoolGate(user) {
   document.getElementById('loginPassword').disabled = true;
   const note = document.getElementById('loginSchoolNote');
   note.hidden = false;
-  note.textContent = `Sesi ${user.email || 'akun'} aktif. Masukkan kode sekolah yang terdaftar pada akun ini.`;
+  note.textContent = `Sesi ${user.email || 'akun'} aktif. Masukkan NPSN sekolah (8 angka).`;
   document.getElementById('loginChangeAccount').style.display = 'flex';
+  document.getElementById('showCreateAdminBtn').hidden = true;
 }
 
-function toggleAdminCreatePanel(show) {
-  const panel = document.getElementById('adminCreatePanel');
-  const btn = document.getElementById('showCreateAdminBtn');
-  if (panel) panel.style.display = show ? 'block' : 'none';
-  if (btn) btn.style.display = show ? 'none' : 'block';
-}
-
-function mapAdminRoleToSchoolRole(role) {
-  switch (role) {
-    case 'super_admin': return 'owner';
-    case 'admin':
-    case 'bk_manager': return 'bk';
-    default: return 'bk';
+function openAdminCreateDialog() {
+  if (authenticatedUser) {
+    setAuthMessage('loginAuthMessage', 'Keluar dari akun aktif sebelum membuat akun admin baru.');
+    return;
   }
+  setAuthMessage('adminCreateMessage', '');
+  const dialog = document.getElementById('adminCreateModal');
+  if (!dialog) return;
+  dialog.classList.add('open');
+  dialog.setAttribute('aria-hidden', 'false');
+  document.getElementById('newAdminName')?.focus();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeAdminCreateDialog() {
+  const dialog = document.getElementById('adminCreateModal');
+  if (!dialog) return;
+  dialog.classList.remove('open');
+  dialog.setAttribute('aria-hidden', 'true');
+  document.getElementById('showCreateAdminBtn')?.focus();
 }
 
 async function createAdminAccountFromLoginPage() {
   if (authenticatedUser) {
-    swal('Keluar Terlebih Dahulu', 'Keluar dari akun yang aktif sebelum membuat akun admin baru agar sesi tidak tertukar.', 'warning');
+    setAuthMessage('adminCreateMessage', 'Keluar dari akun aktif sebelum membuat akun admin baru.');
     return;
   }
 
@@ -2595,45 +2681,56 @@ async function createAdminAccountFromLoginPage() {
   const payload = {
     name: getValue('newAdminName').trim(),
     email: getValue('newAdminEmail').trim(),
-    schoolCode: normalizeSchoolCode(getValue('newAdminSchoolCode')),
+    npsn: normalizeNpsn(getValue('newAdminNpsn')),
+    inviteCode: normalizeInviteCode(getValue('newAdminInviteCode')),
     password: getValue('newAdminPassword'),
     confirmPassword: getValue('newAdminConfirmPassword')
   };
 
-  if (!payload.name || !payload.email || !payload.schoolCode || !payload.password || !payload.confirmPassword) {
-    swal('Lengkapi Form', 'Semua field wajib diisi untuk membuat akun admin baru.', 'warning');
+  setAuthMessage('adminCreateMessage', '');
+  if (!payload.name || !payload.email || !payload.npsn || !payload.inviteCode || !payload.password || !payload.confirmPassword) {
+    setAuthMessage('adminCreateMessage', 'Lengkapi semua kolom sebelum membuat akun.');
+    return;
+  }
+  if (!isValidNpsn(payload.npsn)) {
+    setAuthMessage('adminCreateMessage', 'NPSN harus tepat 8 angka.');
     return;
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
-    swal('Email Tidak Valid', 'Format email tidak cocok.', 'error');
+    setAuthMessage('adminCreateMessage', 'Format email belum benar. Contoh: nama@sekolah.sch.id.');
     return;
   }
 
   if (payload.password.length < 8) {
-    swal('Password Terlalu Pendek', 'Password minimal 8 karakter.', 'warning');
+    setAuthMessage('adminCreateMessage', 'Password minimal 8 karakter.');
     return;
   }
 
   if (payload.password !== payload.confirmPassword) {
-    swal('Password Tidak Cocok', 'Konfirmasi password harus sama.', 'error');
+    setAuthMessage('adminCreateMessage', 'Kedua password belum sama. Periksa kembali.');
     return;
   }
 
+  const submit = document.getElementById('createAdminSubmit');
+  if (submit) { submit.disabled = true; submit.textContent = 'Memeriksa NPSN...'; }
+  let accountCreated = false;
   try {
-    const school = await lookupSchoolByCode(payload.schoolCode);
+    const school = await lookupSchoolByNpsn(payload.npsn, payload.inviteCode);
     if (!school?.id) {
-      swal('Kode Sekolah Tidak Ditemukan', 'Periksa kembali kode sekolah. Akun belum dibuat.', 'error');
+      setAuthMessage('adminCreateMessage', 'NPSN atau kode undangan tidak cocok. Periksa keduanya kepada pengelola sekolah. Akun belum dibuat.');
       return;
     }
 
+    if (submit) submit.textContent = 'Membuat akun...';
     const signUpResult = await supabaseClient.auth.signUp({
       email: payload.email.toLowerCase(),
       password: payload.password,
       options: {
         data: {
           full_name: payload.name,
-          school_code: payload.schoolCode
+          npsn: payload.npsn,
+          school_invite_code: payload.inviteCode
         }
       }
     });
@@ -2642,39 +2739,57 @@ async function createAdminAccountFromLoginPage() {
 
     const user = signUpResult.data?.user;
     if (!user) throw new Error('Akun baru tidak dibuat oleh Supabase.');
+    accountCreated = true;
 
     if (signUpResult.data?.session) {
-      await claimSchoolMembership(payload.schoolCode, payload.name);
+      await claimSchoolMembership(payload.npsn, payload.name, payload.inviteCode);
     }
 
     const confirmationRequired = !signUpResult.data?.session;
-    swal(
-      confirmationRequired ? 'Periksa Email Anda' : 'Akun Admin Berhasil Dibuat',
+    closeAdminCreateDialog();
+    setAuthMessage(
+      'loginAuthMessage',
       confirmationRequired
-        ? 'Akun sudah dibuat. Klik link verifikasi di email, lalu login dengan email, password, dan kode sekolah yang sama.'
-        : `Akun berhasil terhubung ke ${school.name}. Silakan login untuk melanjutkan.`,
+        ? 'Akun berhasil dibuat. Buka email dan klik link verifikasi, lalu masuk dengan NPSN yang sama.'
+        : `Akun terhubung ke ${school.name}. Silakan masuk untuk melanjutkan.`,
       'success'
     );
-    toggleAdminCreatePanel(false);
-    ['newAdminName','newAdminEmail','newAdminSchoolCode','newAdminPassword','newAdminConfirmPassword']
+    ['newAdminName','newAdminEmail','newAdminNpsn','newAdminInviteCode','newAdminPassword','newAdminConfirmPassword']
       .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   } catch (error) {
-    console.error('createAdminAccountFromLoginPage error:', error);
-    swal('Gagal Membuat Akun', error?.message || 'Terjadi kesalahan saat membuat akun admin.', 'error');
+    const message = accountCreated
+      ? 'Akun sudah dibuat, tetapi belum berhasil ditautkan ke sekolah. Coba masuk lagi setelah verifikasi email.'
+      : getSupabaseAuthMessage(error);
+    reportAuthIssue('adminCreateMessage', message, error, 'Pendaftaran admin');
+  } finally {
+    if (submit) { submit.disabled = false; submit.textContent = 'Buat akun'; }
   }
 }
 
-async function resolveSchoolAccess(user, code) {
+async function resendLoginVerification() {
+  const email = document.getElementById('loginEmail')?.value.trim();
+  if (!email) {
+    setAuthMessage('loginAuthMessage', 'Isi email akun terlebih dahulu untuk mengirim ulang verifikasi.');
+    return;
+  }
+  const result = await resendVerificationEmail(email);
+  if (result.sent) setAuthMessage('loginAuthMessage', 'Link verifikasi sudah diminta. Periksa inbox dan folder spam.', 'success');
+  else reportAuthIssue('loginAuthMessage', 'Link verifikasi belum berhasil dikirim. Periksa detail dan coba lagi.', result.error, 'Kirim ulang verifikasi');
+}
+
+async function resolveSchoolAccess(user, npsn) {
   const requestRevision = authRevision;
-  const fail = () => { throw new Error('Kode sekolah tidak ditemukan atau tidak cocok dengan akun ini.'); };
-  const normalizedCode = normalizeSchoolCode(code);
+  const fail = () => { throw new Error('NPSN tidak ditemukan atau tidak cocok dengan akun ini.'); };
+  const normalizedNpsn = normalizeNpsn(npsn);
+  if (!isValidNpsn(normalizedNpsn)) throw new Error('NPSN harus tepat 8 angka.');
   if (!user || !user.id || authenticatedUser?.id !== user.id) fail();
   const school = await claimSchoolMembership(
-    normalizedCode,
-    user.user_metadata?.full_name || user.email || 'Admin'
+    normalizedNpsn,
+    user.user_metadata?.full_name || user.email || 'Admin',
+    user.user_metadata?.school_invite_code || ''
   );
   if (requestRevision !== authRevision || authenticatedUser?.id !== user.id) fail();
-  const claimedSchoolId = school?.school_id || school?.id;
+  const claimedSchoolId = school?.id;
   if (!claimedSchoolId) fail();
 
   const {data: membership, error: memberError} = await supabaseClient.from('school_members')
@@ -2687,17 +2802,29 @@ async function resolveSchoolAccess(user, code) {
   }
 
   activeSchoolId = claimedSchoolId;
-  activeSchoolName = school.school_name || school.name;
+  activeSchoolName = school.name;
   return { id: activeSchoolId, name: activeSchoolName };
 }
 
 async function login() {
   if (loginBusy) return;
-  const schoolCode = document.getElementById('loginSchoolCode').value.trim().toUpperCase();
+  const npsnInput = document.getElementById('loginNpsn');
+  const npsn = normalizeNpsn(npsnInput?.value);
+  if (npsnInput) npsnInput.value = npsn;
   const email = document.getElementById('loginEmail').value.trim();
   const pass  = document.getElementById('loginPassword').value;
-  if (!schoolCode) { swal('Kode Sekolah','Masukkan kode sekolah untuk melanjutkan.','warning'); return; }
-  if (!authenticatedUser && (!email || !pass)) { swal('Peringatan','Harap isi email dan password!','warning'); return; }
+  setAuthMessage('loginAuthMessage', '');
+  const resendButton = document.getElementById('resendVerificationBtn');
+  if (resendButton) resendButton.hidden = true;
+  if (!isValidNpsn(npsn)) {
+    setAuthMessage('loginAuthMessage', 'Masukkan NPSN sekolah yang terdiri dari 8 angka.');
+    npsnInput?.focus();
+    return;
+  }
+  if (!authenticatedUser && (!email || !pass)) {
+    setAuthMessage('loginAuthMessage', 'Masukkan email dan password akun admin.');
+    return;
+  }
   loginStartedAt = performance.now();
   loginStage = -1;
   setLoginBusy(true);
@@ -2717,50 +2844,33 @@ async function login() {
       currentUser = user.email || email;
       showAuthenticatedSchoolGate(user);
     }
-    updateLoginProgress(1, 'Akun terverifikasi. Memeriksa kode sekolah...');
+    updateLoginProgress(1, 'Akun terverifikasi. Memeriksa NPSN sekolah...');
     failedStage = 2;
     updateLoginProgress(2, 'Memastikan keanggotaan sekolah...');
-    const school = await resolveSchoolAccess(user, schoolCode);
+    const school = await resolveSchoolAccess(user, npsn);
     updateLoginProgress(3, `Akses ${school.name} terverifikasi. Menyiapkan sesi...`);
     showApp();
   } catch(error) {
-    const authError = getSupabaseAuthMessage(error);
-    updateLoginProgress(failedStage, authError, true);
     setLoginBusy(false);
     const note = document.getElementById('loginSchoolNote');
     if (authenticatedUser && note) {
       note.hidden = false;
-      note.textContent = `${authenticatedUser.email || 'Sesi aktif'}: masukkan kode sekolah yang terdaftar pada akun ini.`;
+      note.textContent = `${authenticatedUser.email || 'Sesi aktif'}: masukkan NPSN sekolah (8 angka).`;
       showAuthenticatedSchoolGate(authenticatedUser);
     }
 
     const errorCode = String(error?.code || '').toLowerCase();
     const isUnconfirmedEmail = errorCode === 'email_not_confirmed' || String(error?.message || '').toLowerCase().includes('email not confirmed');
     if (isUnconfirmedEmail) {
-      const email = document.getElementById('loginEmail').value.trim();
-      const result = await swal({
-        title: 'Login Gagal',
-        text: authError,
-        icon: 'error',
-        showCancelButton: true,
-        confirmButtonText: 'Kirim Ulang Email',
-        cancelButtonText: 'Tutup',
-        confirmButtonColor: '#0fba9d'
-      });
-      if (result.isConfirmed) {
-        const sent = await resendVerificationEmail(email);
-        swal(
-          sent ? 'Link Verifikasi Terkirim' : 'Gagal Mengirim Ulang',
-          sent
-            ? 'Silakan cek inbox email Anda dan klik link verifikasi.'
-            : 'Tidak dapat mengirim ulang email verifikasi. Pastikan akun Anda memiliki email yang benar.',
-          sent ? 'success' : 'error'
-        );
-      }
+      setAuthMessage('loginAuthMessage', getSupabaseAuthMessage(error));
+      if (resendButton) resendButton.hidden = false;
+      updateLoginProgress(failedStage, 'Email belum diverifikasi. Periksa email atau kirim ulang link.', true);
       return;
     }
 
-    swal(failedStage === 1 ? 'Login Gagal' : 'Sekolah Tidak Cocok', authError || 'Tidak dapat memverifikasi akses.', 'error');
+    const message = getSupabaseAuthMessage(error);
+    updateLoginProgress(failedStage, message, true);
+    reportAuthIssue('loginAuthMessage', message, error, failedStage === 1 ? 'Login admin' : 'Pemeriksaan NPSN');
   }
 }
 
@@ -2789,7 +2899,7 @@ async function logout() {
   updateAuthUser(null);
   showLoginGate(null);
   const {error} = await auth.signOut();
-  if (error) swal('Gagal Keluar', 'Sesi belum dapat ditutup. Coba lagi.', 'error');
+  if (error) reportAuthIssue('loginAuthMessage', 'Sesi belum dapat ditutup. Coba lagi atau laporkan detail teknis di bawah.', error, 'Keluar akun');
 }
 
 function switchLoginAccount() {
@@ -2801,7 +2911,7 @@ function switchSchool() {
   const user = authenticatedUser;
   resetTenantState();
   showLoginGate(user);
-  document.getElementById('loginSchoolCode').focus();
+  document.getElementById('loginNpsn').focus();
 }
 
 function _detachListeners() {
@@ -3003,8 +3113,22 @@ document.querySelectorAll('.drawer-item').forEach(item => {
 
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
+    if (document.getElementById('adminCreateModal').classList.contains('open')) {
+      closeAdminCreateDialog();
+      return;
+    }
     closeDrawer();
     closeSidebar();
+    return;
+  }
+  const adminDialog = document.getElementById('adminCreateModal');
+  if (event.key === 'Tab' && adminDialog.classList.contains('open')) {
+    const focusable = [...adminDialog.querySelectorAll('button:not([disabled]),input:not([disabled])')];
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     return;
   }
   const drawer = document.getElementById('drawer');
