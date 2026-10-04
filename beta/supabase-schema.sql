@@ -338,3 +338,5 @@ create policy school_read on schools for select to authenticated using (public.i
 alter table profiles enable row level security;
 drop policy if exists profile_read on profiles;
 create policy profile_read on profiles for select to authenticated using (id = auth.uid());
+
+notify pgrst, 'reload schema';
