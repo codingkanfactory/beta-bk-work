@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POIN TATIBSI | Responsive Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+:root {
+  color-scheme:light;
+  --bg:#f5f8f8;--surface:#fff;--surface-2:#f0f5f4;--ink:#14221f;--muted:#60736f;
+  --line:#dce7e4;--navy:#142a27;--sage:#13866b;--sage-hover:#0d725a;--sage-soft:#e7f5ef;
+  --warning:#b77909;--warning-soft:#fff5d9;--danger:#c83e4d;--danger-soft:#fff0f0;
+  --success:#168257;--success-soft:#e7f5ed;--radius:10px;--motion:180ms ease;--sidebar:78px;--topbar:68px;
+}
+[data-theme="dark"] {
+  color-scheme:dark;
+  --bg:#0b1418;--surface:#111f23;--surface-2:#17282b;--ink:#edf5f3;--muted:#a5b6b3;
+  --line:#294044;--navy:#102421;--sage:#45d3a2;--sage-hover:#6de0b5;--sage-soft:#14382f;
+  --warning:#f0c365;--warning-soft:#392f1b;--danger:#ff828b;--danger-soft:#3c2025;
+  --success:#5cdaa1;--success-soft:#17372b;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif}
+body{overflow-x:hidden}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{--sidebar-width:var(--sidebar);min-height:100vh}
+.app.nav-expanded{--sidebar-width:230px}
+.topbar{position:fixed;z-index:30;top:0;left:var(--sidebar-width);right:0;height:var(--topbar);display:flex;align-items:center;gap:16px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--line);transition:left 200ms ease,background var(--motion),border-color var(--motion)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-mark{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:var(--navy);color:#fff}
+.brand-mark svg{width:20px;height:20px}
+.brand-name{font:800 15px 'Plus Jakarta Sans',sans-serif;white-space:nowrap}
+.brand-name b{color:var(--sage)}
+.icon-button{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);transition:background var(--motion),border-color var(--motion),transform var(--motion)}
+.icon-button svg{width:19px;height:19px}
+.icon-button:hover{background:var(--surface-2);border-color:var(--muted)}
+.icon-button:active,.button:active,.nav-link:active{transform:scale(.97)}
+.menu-toggle{flex:none}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.user-chip{height:40px;display:flex;align-items:center;gap:9px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.user-avatar{width:25px;height:25px;display:grid;place-items:center;border-radius:7px;background:var(--sage-soft);color:var(--sage);font-size:11px;font-weight:800}
+.user-name{font-size:12px;font-weight:700}
+.sidebar{position:fixed;z-index:25;top:var(--topbar);bottom:0;left:0;width:var(--sidebar-width);display:flex;flex-direction:column;gap:6px;padding:20px 10px;background:var(--navy);transition:width 200ms ease,transform 220ms ease;overflow:hidden}
+.nav-group-label{height:24px;padding:6px 12px 0;color:#a8c0b9;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;opacity:0;transition:opacity var(--motion)}
+.nav-link{width:100%;height:46px;flex:none;display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:0 11px;border:1px solid transparent;border-radius:9px;background:transparent;color:#ccdbd6;text-align:left;transition:background var(--motion),color var(--motion),border-color var(--motion),transform var(--motion)}
+.nav-link svg{width:20px;height:20px;flex:none}
+.nav-link:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-link.active{background:#dff3e9;color:#145f4d;border-color:rgba(255,255,255,.4)}
+.nav-label{display:none;font-size:13px;font-weight:600;white-space:nowrap}
+.nav-expanded .nav-label,.mobile-nav-open .nav-label{display:block}
+.nav-expanded .sidebar{padding-inline:12px}
+.nav-expanded .nav-group-label{opacity:1}
+.sidebar-spacer{flex:1}
+.main{margin:var(--topbar) 0 0 var(--sidebar-width);padding:30px clamp(18px,3vw,42px) 48px;transition:margin-left 200ms ease}
+.nav-expanded .topbar{left:230px}
+.nav-expanded .main{margin-left:230px}
+.backdrop{display:none}
+.page{display:none;max-width:1440px;margin:0 auto;animation:page-in 180ms ease both}
+.page.active{display:block}
+@keyframes page-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+.eyebrow{margin:0 0 5px;color:var(--sage);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+h1,h2,h3,p{margin-top:0}
+h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif}
+h1{margin-bottom:4px;font-size:26px;line-height:1.2}
+.page-subtitle{margin:0;color:var(--muted);font-size:13px}
+.button{min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 15px;border:1px solid transparent;border-radius:8px;background:var(--sage);color:#fff;font-size:13px;font-weight:700;transition:background var(--motion),transform var(--motion),box-shadow var(--motion)}
+.button:hover{background:var(--sage-hover);box-shadow:0 3px 10px color-mix(in srgb,var(--sage) 20%,transparent)}
+.button svg{width:17px;height:17px}
+.button.secondary{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.button.secondary:hover{background:var(--surface-2)}
+.button.small{min-height:34px;padding:0 10px;font-size:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.metric{min-width:0;padding:17px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.metric-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.metric-label{color:var(--muted);font-size:12px;font-weight:600}
+.metric-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:8px;background:var(--surface-2);color:var(--sage)}
+.metric-icon svg{width:18px;height:18px}
+.metric-value{margin-top:10px;font:700 27px 'Fira Code',monospace;font-variant-numeric:tabular-nums}
+.metric-note{margin-top:4px;color:var(--muted);font-size:11px}
+.metric.warning .metric-icon{background:var(--warning-soft);color:var(--warning)}
+.metric.danger .metric-icon{background:var(--danger-soft);color:var(--danger)}
+.metric.success .metric-icon{background:var(--success-soft);color:var(--success)}
+.panel{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.panel-header{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.panel-title{margin:0;font-size:14px;font-weight:700}
+.panel-body{padding:18px}
+.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr);gap:14px}
+.chart-area{height:190px;display:flex;align-items:flex-end;gap:clamp(8px,2vw,20px);padding:18px 10px 0;border-bottom:1px solid var(--line);background:repeating-linear-gradient(to bottom,transparent 0,transparent 46px,var(--line) 47px,var(--line) 48px)}
+.bar-column{height:100%;flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:8px;min-width:0}
+.bar{width:min(34px,75%);height:var(--height);min-height:5px;border-radius:6px 6px 2px 2px;background:var(--sage);transition:height 300ms ease,filter var(--motion)}
+.bar:hover{filter:brightness(1.08)}
+.bar-label{padding-bottom:8px;color:var(--muted);font-size:10px}
+.chart-legend{display:flex;align-items:center;gap:7px;margin-top:12px;color:var(--muted);font-size:11px}
+.legend-dot{width:8px;height:8px;border-radius:50%;background:var(--sage)}
+.status-list{display:flex;flex-direction:column;gap:14px}
+.status-row{display:grid;grid-template-columns:minmax(86px,1fr) 2fr 28px;align-items:center;gap:10px;font-size:12px}
+.status-name{color:var(--muted)}
+.status-track{height:7px;overflow:hidden;border-radius:10px;background:var(--surface-2)}
+.status-fill{height:100%;width:var(--value);border-radius:inherit;background:var(--sage)}
+.status-row.warn .status-fill{background:#dba937}.status-row.critical .status-fill{background:var(--danger)}
+.status-count{text-align:right;font:600 11px 'Fira Code',monospace}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 10px}
+.section-head h2{margin:0;font-size:14px}
+.activity-list{display:flex;flex-direction:column}
+.activity{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.activity:last-child{border:0}
+.activity-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:8px;background:var(--danger-soft);color:var(--danger)}
+.activity-icon svg{width:17px;height:17px}
+.activity-name{font-size:12px;font-weight:700}.activity-desc{margin-top:2px;color:var(--muted);font-size:11px}
+.activity-points{font:700 13px 'Fira Code',monospace;color:var(--danger)}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.search-box{position:relative;flex:1;min-width:180px}
+.search-box svg{position:absolute;left:12px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.input{width:100%;height:42px;padding:0 12px;border:1px solid var(--line);border-radius:8px;outline:0;background:var(--surface);color:var(--ink);font-size:13px;transition:border-color var(--motion),box-shadow var(--motion)}
+.search-box .input{padding-left:38px}
+.input:focus{border-color:var(--sage);box-shadow:0 0 0 3px color-mix(in srgb,var(--sage) 14%,transparent)}
+.select{height:42px;padding:0 32px 0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px}
+.student-list{display:flex;flex-direction:column}
+.student-row{display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(95px,.7fr) minmax(100px,.8fr) auto;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--line);transition:background var(--motion)}
+.student-row[hidden]{display:none}
+.student-row:hover{background:var(--surface-2)}
+.student-row:last-child{border-bottom:0}
+.student-person{display:flex;align-items:center;gap:10px;min-width:0}
+.avatar{width:36px;height:36px;display:grid;place-items:center;flex:none;border-radius:9px;background:var(--sage-soft);color:var(--sage);font:700 12px 'Plus Jakarta Sans',sans-serif}
+.student-copy{min-width:0}.student-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700}.student-id{margin-top:2px;color:var(--muted);font:10px 'Fira Code',monospace}
+.student-class{color:var(--muted);font-size:12px}
+.points{font:600 12px 'Fira Code',monospace}
+.badge{width:max-content;max-width:100%;padding:5px 8px;border-radius:5px;background:var(--success-soft);color:var(--success);font-size:10px;font-weight:700;white-space:nowrap}
+.badge.warn{background:var(--warning-soft);color:var(--warning)}.badge.danger{background:var(--danger-soft);color:var(--danger)}
+.row-actions{display:flex;gap:6px}.row-actions .icon-button{width:34px;height:34px}
+.list-head{display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(95px,.7fr) minmax(100px,.8fr) 78px;gap:14px;padding:10px 16px;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase}
+.form-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(250px,.7fr);gap:14px;align-items:start}
+.form-card{padding:20px}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:15px}
+.form-group label{font-size:11px;font-weight:700;color:var(--muted)}
+.form-group textarea{height:auto;min-height:84px;padding:11px 12px;resize:vertical}
+.preview-card{position:sticky;top:calc(var(--topbar) + 20px);padding:18px;background:var(--navy);color:#fff;border-radius:var(--radius)}
+.preview-label{color:#b5c9c2;font-size:11px}.preview-name{margin:10px 0;font-size:15px;font-weight:700}.preview-points{display:flex;align-items:baseline;gap:9px;padding:12px 0;border-top:1px solid rgba(255,255,255,.15);border-bottom:1px solid rgba(255,255,255,.15)}
+.preview-before,.preview-after{font:700 23px 'Fira Code',monospace}.preview-after{color:#70dbb2}.preview-arrow{color:#b5c9c2}
+.toast{position:fixed;right:20px;bottom:20px;z-index:100;display:flex;align-items:center;gap:9px;padding:12px 15px;border:1px solid var(--line);border-radius:9px;background:var(--surface);box-shadow:0 8px 28px rgba(10,30,26,.12);opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity var(--motion),transform var(--motion);font-size:12px;font-weight:600}
+.toast.show{opacity:1;transform:translateY(0)}.toast svg{width:17px;height:17px;color:var(--success)}
+.dialog-overlay{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:18px;background:rgba(5,18,19,.45);opacity:0;pointer-events:none;transition:opacity var(--motion)}
+.dialog-overlay.open{opacity:1;pointer-events:auto}
+.dialog{width:min(560px,100%);padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 50px rgba(5,18,19,.2);transform:translateY(8px) scale(.98);transition:transform var(--motion)}
+.dialog-overlay.open .dialog{transform:none}
+.dialog-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.dialog-head h2{margin:0;font-size:16px}
+.more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.more-link{min-height:54px;display:flex;align-items:center;gap:11px;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);text-align:left;font-size:12px;font-weight:600;transition:background var(--motion),border-color var(--motion)}.more-link:hover{background:var(--surface-2);border-color:var(--sage)}.more-link svg{width:32px;height:32px;padding:7px;border-radius:7px;background:var(--surface-2);color:var(--sage)}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--sage) 40%,transparent);outline-offset:2px}
+@media (max-width:1050px){.dashboard-grid{grid-template-columns:minmax(0,1.2fr) minmax(250px,1fr)}.main{padding-inline:22px}}
+@media (max-width:820px){
+  :root{--sidebar:0px}
+  .topbar{left:0;padding-inline:15px}
+  .sidebar{top:var(--topbar);width:min(278px,calc(100vw - 52px));transform:translateX(-105%);box-shadow:10px 0 28px rgba(5,18,19,.16)}
+  .mobile-nav-open .sidebar{transform:translateX(0)}
+  .mobile-nav-open .backdrop{position:fixed;inset:var(--topbar) 0 0;z-index:20;display:block;background:rgba(5,18,19,.38)}
+  .nav-group-label{opacity:1}
+  .nav-link{height:48px;flex-direction:row;justify-content:flex-start;padding-inline:11px}
+  .nav-label{display:block}
+  .main,.nav-expanded .main{margin-left:0;padding:23px 18px 34px}
+  .nav-expanded .topbar{left:0}
+  .dashboard-grid{grid-template-columns:1fr}
+  .preview-card{position:static}
+}
+@media (max-width:620px){
+  :root{--topbar:62px}
+  .topbar{gap:10px;padding-inline:10px}
+  .brand{gap:8px}.brand-mark{width:34px;height:34px}.brand-name{font-size:13px}
+  .top-actions{gap:5px}.top-actions .icon-button{width:36px;height:36px}
+  .user-chip{width:36px;height:36px;justify-content:center;padding:0}.user-chip .user-name{display:none}
+  .main,.nav-expanded .main{padding:19px 13px 28px}
+  .page-heading{align-items:flex-start;margin-bottom:17px}.page-heading h1{font-size:22px}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .metric{padding:13px}.metric-value{font-size:23px}.metric-note{font-size:10px}
+  .panel-header{padding-inline:13px}.panel-body{padding:13px}
+  .chart-area{height:162px;gap:7px;padding-inline:2px}.bar{width:min(27px,80%)}
+  .toolbar{flex-wrap:wrap}.search-box{flex-basis:100%}.toolbar .select{flex:1;min-width:0}
+  .list-head{display:none}
+  .student-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;padding:12px}
+  .student-person{grid-column:1;grid-row:1}.student-class{grid-column:1;grid-row:2;margin-left:46px;margin-top:0;font-size:10px}
+  .student-row .badge{grid-column:2;grid-row:1;justify-self:end}
+  .student-row .points{grid-column:1;grid-row:3;margin-left:46px}
+  .row-actions{grid-column:2;grid-row:3;justify-self:end}
+  .form-layout{grid-template-columns:1fr}.preview-card{order:-1}
+  .dialog{padding:16px}.more-grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <button class="icon-button menu-toggle" id="menuToggle" aria-label="Buka navigasi" aria-expanded="false" title="Buka navigasi"><i data-lucide="menu"></i></button>
+    <div class="brand"><span class="brand-mark"><i data-lucide="shield-check"></i></span><span class="brand-name">POIN <b>TATIBSI</b></span></div>
+    <div class="top-actions">
+      <button class="icon-button" id="themeToggle" title="Ubah tema" aria-label="Ubah tema"><i data-lucide="sun-moon"></i></button>
+      <button class="user-chip" title="Profil admin"><span class="user-avatar">BK</span><span class="user-name">Admin BK</span></button>
+    </div>
+  </header>
+  <aside class="sidebar" id="sidebar" aria-label="Navigasi utama">
+    <div class="nav-group-label">Ruang kerja</div>
+    <button class="nav-link active" data-page="home" title="Beranda"><i data-lucide="layout-dashboard"></i><span class="nav-label">Beranda</span></button>
+    <button class="nav-link" data-page="students" title="Direktori siswa"><i data-lucide="users"></i><span class="nav-label">Siswa</span></button>
+    <button class="nav-link" data-page="record" title="Catat pelanggaran"><i data-lucide="file-plus-2"></i><span class="nav-label">Catat kasus</span></button>
+    <button class="nav-link" data-page="history" title="Riwayat kasus"><i data-lucide="history"></i><span class="nav-label">Riwayat</span></button>
+    <div class="sidebar-spacer"></div>
+    <button class="nav-link" id="moreButton" title="Menu lainnya"><i data-lucide="grid-2x2"></i><span class="nav-label">Lainnya</span></button>
+  </aside>
+  <div class="backdrop" id="backdrop"></div>
+  <main class="main">
+    <section class="page active" id="page-home" aria-labelledby="homeTitle">
+      <div class="page-heading"><div><p class="eyebrow">Ruang kerja BK · Senin, 27 September</p><h1 id="homeTitle">Ringkasan sekolah</h1><p class="page-subtitle">Pantau kondisi siswa dan tindak lanjut kasus.</p></div><button class="button" data-page="record"><i data-lucide="plus"></i>Catat pelanggaran</button></div>
+      <div class="metrics">
+        <article class="metric"><div class="metric-top"><span class="metric-label">Total siswa</span><span class="metric-icon"><i data-lucide="users"></i></span></div><div class="metric-value">146</div><div class="metric-note">Terdaftar di sekolah</div></article>
+        <article class="metric warning"><div class="metric-top"><span class="metric-label">Perlu perhatian</span><span class="metric-icon"><i data-lucide="triangle-alert"></i></span></div><div class="metric-value">12</div><div class="metric-note">60–79 poin tersisa</div></article>
+        <article class="metric danger"><div class="metric-top"><span class="metric-label">Status kritis</span><span class="metric-icon"><i data-lucide="siren"></i></span></div><div class="metric-value">3</div><div class="metric-note">Perlu tindak lanjut</div></article>
+        <article class="metric success"><div class="metric-top"><span class="metric-label">Status baik</span><span class="metric-icon"><i data-lucide="circle-check"></i></span></div><div class="metric-value">131</div><div class="metric-note">80+ poin tersisa</div></article>
+      </div>
+      <div class="dashboard-grid">
+        <section class="panel"><div class="panel-header"><h2 class="panel-title">Tren pelanggaran</h2><select class="select" aria-label="Pilih rentang grafik"><option>6 bulan terakhir</option><option>Tahun ini</option></select></div><div class="panel-body"><div class="chart-area" aria-label="Grafik kasus bulanan"><div class="bar-column"><span class="bar" style="--height:32%"></span><span class="bar-label">Apr</span></div><div class="bar-column"><span class="bar" style="--height:52%"></span><span class="bar-label">Mei</span></div><div class="bar-column"><span class="bar" style="--height:38%"></span><span class="bar-label">Jun</span></div><div class="bar-column"><span class="bar" style="--height:70%"></span><span class="bar-label">Jul</span></div><div class="bar-column"><span class="bar" style="--height:46%"></span><span class="bar-label">Agu</span></div><div class="bar-column"><span class="bar" style="--height:24%"></span><span class="bar-label">Sep</span></div></div><div class="chart-legend"><span class="legend-dot"></span>Kasus tercatat</div></div></section>
+        <section class="panel"><div class="panel-header"><h2 class="panel-title">Status poin per kelas</h2><button class="icon-button" data-page="students" aria-label="Buka daftar siswa"><i data-lucide="arrow-up-right"></i></button></div><div class="panel-body"><div class="status-list"><div class="status-row"><span class="status-name">Status baik</span><span class="status-track"><span class="status-fill" style="--value:84%"></span></span><span class="status-count">131</span></div><div class="status-row warn"><span class="status-name">Perhatian</span><span class="status-track"><span class="status-fill" style="--value:10%"></span></span><span class="status-count">12</span></div><div class="status-row critical"><span class="status-name">Kritis</span><span class="status-track"><span class="status-fill" style="--value:6%"></span></span><span class="status-count">3</span></div></div></div></section>
+      </div>
+      <div class="section-head"><h2>Aktivitas terbaru</h2><button class="button secondary small" data-page="history">Lihat riwayat <i data-lucide="arrow-right"></i></button></div>
+      <section class="panel"><div class="panel-body"><div class="activity-list"><div class="activity"><span class="activity-icon"><i data-lucide="file-warning"></i></span><div><div class="activity-name">Rani Putri · XI-A</div><div class="activity-desc">Terlambat · Hari ini, 08.12</div></div><span class="activity-points">−5</span></div><div class="activity"><span class="activity-icon"><i data-lucide="file-warning"></i></span><div><div class="activity-name">Dimas Pratama · X-B</div><div class="activity-desc">Tidak mengerjakan tugas · Kemarin</div></div><span class="activity-points">−10</span></div><div class="activity"><span class="activity-icon"><i data-lucide="file-warning"></i></span><div><div class="activity-name">Nadia Sari · XII-A</div><div class="activity-desc">Seragam tidak lengkap · 25 Sep</div></div><span class="activity-points">−8</span></div></div></div></section>
+    </section>
+
+    <section class="page" id="page-students" aria-labelledby="studentsTitle">
+      <div class="page-heading"><div><p class="eyebrow">Data siswa</p><h1 id="studentsTitle">Direktori siswa</h1><p class="page-subtitle">Cari siswa dan lihat status poinnya.</p></div><button class="button" data-page="record"><i data-lucide="plus"></i>Catat kasus</button></div>
+      <div class="toolbar"><label class="search-box"><i data-lucide="search"></i><input class="input" id="studentSearch" type="search" placeholder="Cari nama atau UID" aria-label="Cari nama atau UID"></label><select class="select" id="classFilter" aria-label="Filter kelas"><option value="all">Semua kelas</option><option value="X-A">X-A</option><option value="XI-A">XI-A</option><option value="XII-A">XII-A</option></select></div>
+      <section class="panel"><div class="list-head"><span>Siswa</span><span>Kelas</span><span>Poin tersisa</span><span>Status</span></div><div class="student-list" id="studentList">
+        <article class="student-row" data-name="rani putri 0084512011" data-class="XI-A"><div class="student-person"><span class="avatar">RP</span><div class="student-copy"><div class="student-name">Rani Putri</div><div class="student-id">UID 0084512011</div></div></div><span class="student-class">XI-A</span><span class="points">92 / 100</span><span class="badge">Baik</span><div class="row-actions"><button class="icon-button" aria-label="Catat untuk Rani Putri" data-page="record"><i data-lucide="file-plus-2"></i></button></div></article>
+        <article class="student-row" data-name="dimas pratama 0078910422" data-class="X-A"><div class="student-person"><span class="avatar">DP</span><div class="student-copy"><div class="student-name">Dimas Pratama</div><div class="student-id">UID 0078910422</div></div></div><span class="student-class">X-A</span><span class="points">68 / 100</span><span class="badge warn">Perhatian</span><div class="row-actions"><button class="icon-button" aria-label="Catat untuk Dimas Pratama" data-page="record"><i data-lucide="file-plus-2"></i></button></div></article>
+        <article class="student-row" data-name="nadia sari 0091158063" data-class="XII-A"><div class="student-person"><span class="avatar">NS</span><div class="student-copy"><div class="student-name">Nadia Sari</div><div class="student-id">UID 0091158063</div></div></div><span class="student-class">XII-A</span><span class="points">24 / 100</span><span class="badge danger">Kritis</span><div class="row-actions"><button class="icon-button" aria-label="Catat untuk Nadia Sari" data-page="record"><i data-lucide="file-plus-2"></i></button></div></article>
+        <article class="student-row" data-name="fajar maulana 0083401702" data-class="XI-A"><div class="student-person"><span class="avatar">FM</span><div class="student-copy"><div class="student-name">Fajar Maulana</div><div class="student-id">UID 0083401702</div></div></div><span class="student-class">XI-A</span><span class="points">81 / 100</span><span class="badge">Baik</span><div class="row-actions"><button class="icon-button" aria-label="Catat untuk Fajar Maulana" data-page="record"><i data-lucide="file-plus-2"></i></button></div></article>
+      </div></section>
+    </section>
+
+    <section class="page" id="page-record" aria-labelledby="recordTitle">
+      <div class="page-heading"><div><p class="eyebrow">Pencatatan</p><h1 id="recordTitle">Catat pelanggaran</h1><p class="page-subtitle">Pilih siswa, tentukan kasus, dan tinjau perubahan poin.</p></div></div>
+      <div class="form-layout"><form class="panel form-card" id="recordForm"><div class="form-group"><label for="recordStudent">Siswa</label><select class="input" id="recordStudent" required><option value="">Pilih siswa</option><option value="Rani Putri" data-points="92">Rani Putri · XI-A · 92 poin</option><option value="Dimas Pratama" data-points="68">Dimas Pratama · X-A · 68 poin</option><option value="Nadia Sari" data-points="24">Nadia Sari · XII-A · 24 poin</option><option value="Fajar Maulana" data-points="81">Fajar Maulana · XI-A · 81 poin</option></select></div><div class="form-group"><label for="caseType">Jenis pelanggaran</label><select class="input" id="caseType" required><option value="">Pilih jenis kasus</option><option value="5">Terlambat · 5 poin</option><option value="8">Seragam tidak lengkap · 8 poin</option><option value="10">Tidak mengerjakan tugas · 10 poin</option><option value="20">Membolos · 20 poin</option></select></div><div class="form-group"><label for="caseDetail">Catatan (opsional)</label><textarea class="input" id="caseDetail" placeholder="Tambahkan keterangan singkat"></textarea></div><button class="button" type="submit"><i data-lucide="check"></i>Simpan catatan</button></form><aside class="preview-card"><div class="preview-label">Pratinjau poin</div><div class="preview-name" id="previewStudent">Pilih siswa terlebih dahulu</div><div class="preview-points"><span class="preview-before" id="beforePoints">—</span><span class="preview-arrow">→</span><span class="preview-after" id="afterPoints">—</span></div><div class="preview-label" style="margin-top:10px">Nilai akhir diperbarui setelah disimpan.</div></aside></div>
+    </section>
+
+    <section class="page" id="page-history" aria-labelledby="historyTitle">
+      <div class="page-heading"><div><p class="eyebrow">Pencatatan kasus</p><h1 id="historyTitle">Riwayat kasus</h1><p class="page-subtitle">Aktivitas terbaru yang tercatat di sekolah.</p></div><button class="button secondary"><i data-lucide="download"></i>Ekspor</button></div><section class="panel"><div class="panel-body"><div class="activity-list"><div class="activity"><span class="activity-icon"><i data-lucide="file-warning"></i></span><div><div class="activity-name">Rani Putri · XI-A</div><div class="activity-desc">Terlambat · Hari ini, 08.12</div></div><span class="activity-points">−5</span></div><div class="activity"><span class="activity-icon"><i data-lucide="file-warning"></i></span><div><div class="activity-name">Dimas Pratama · X-A</div><div class="activity-desc">Tidak mengerjakan tugas · Kemarin</div></div><span class="activity-points">−10</span></div><div class="activity"><span class="activity-icon"><i data-lucide="file-warning"></i></span><div><div class="activity-name">Nadia Sari · XII-A</div><div class="activity-desc">Seragam tidak lengkap · 25 Sep</div></div><span class="activity-points">−8</span></div></div></div></section>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"><i data-lucide="circle-check"></i><span>Catatan tersimpan</span></div>
+</div>
+<div class="dialog-overlay" id="moreDialog" aria-hidden="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="moreTitle"><div class="dialog-head"><h2 id="moreTitle">Menu lainnya</h2><button class="icon-button" id="closeMore" aria-label="Tutup menu"><i data-lucide="x"></i></button></div><div class="more-grid"><button class="more-link" data-page="history"><i data-lucide="file-text"></i>Surat panggilan</button><button class="more-link" data-page="history"><i data-lucide="megaphone"></i>Pengumuman</button><button class="more-link" data-page="history"><i data-lucide="chart-no-axes-column"></i>Rekap</button><button class="more-link" data-page="students"><i data-lucide="building-2"></i>Kelas</button><button class="more-link" data-page="students"><i data-lucide="key-round"></i>Akun siswa</button><button class="more-link" data-page="home"><i data-lucide="settings"></i>Pengaturan</button></div></section></div>
+<script>
+const app=document.getElementById('app');
+const pages=[...document.querySelectorAll('.page')];
+const navLinks=[...document.querySelectorAll('.nav-link[data-page]')];
+function goToPage(name){pages.forEach(page=>page.classList.toggle('active',page.id===`page-${name}`));navLinks.forEach(link=>link.classList.toggle('active',link.dataset.page===name));if(dialog.classList.contains('open'))closeDialog();app.classList.remove('mobile-nav-open');document.getElementById('menuToggle').setAttribute('aria-expanded','false');document.getElementById('menuToggle').setAttribute('aria-label','Buka navigasi');window.scrollTo({top:0,behavior:'smooth'});}
+document.querySelectorAll('[data-page]').forEach(el=>el.addEventListener('click',()=>goToPage(el.dataset.page)));
+document.getElementById('menuToggle').addEventListener('click',event=>{if(matchMedia('(max-width:820px)').matches){const open=app.classList.toggle('mobile-nav-open');event.currentTarget.setAttribute('aria-expanded',String(open));event.currentTarget.setAttribute('aria-label',open?'Tutup navigasi':'Buka navigasi');}else{app.classList.toggle('nav-expanded');}});
+document.getElementById('backdrop').addEventListener('click',()=>{app.classList.remove('mobile-nav-open');document.getElementById('menuToggle').setAttribute('aria-expanded','false');});
+document.getElementById('themeToggle').addEventListener('click',()=>{const root=document.documentElement;root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';});
+const dialog=document.getElementById('moreDialog');
+function closeDialog(){dialog.classList.remove('open');dialog.setAttribute('aria-hidden','true');document.getElementById('moreButton').focus();}
+document.getElementById('moreButton').addEventListener('click',()=>{dialog.classList.add('open');dialog.setAttribute('aria-hidden','false');document.getElementById('closeMore').focus();});
+document.getElementById('closeMore').addEventListener('click',closeDialog);
+dialog.addEventListener('click',event=>{if(event.target===dialog)closeDialog();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeDialog();app.classList.remove('mobile-nav-open');document.getElementById('menuToggle').setAttribute('aria-expanded','false');}});
+const search=document.getElementById('studentSearch');
+function filterStudents(){const query=search.value.trim().toLowerCase(),klass=document.getElementById('classFilter').value;document.querySelectorAll('.student-row').forEach(row=>{const matches=row.dataset.name.includes(query)&&(klass==='all'||row.dataset.class===klass);row.hidden=!matches;});}
+search.addEventListener('input',filterStudents);document.getElementById('classFilter').addEventListener('change',filterStudents);
+function updatePreview(){const student=document.getElementById('recordStudent'),caseType=document.getElementById('caseType'),option=student.options[student.selectedIndex],base=Number(option.dataset.points||0),deduction=Number(caseType.value||0);document.getElementById('previewStudent').textContent=student.value||'Pilih siswa terlebih dahulu';document.getElementById('beforePoints').textContent=base||'—';document.getElementById('afterPoints').textContent=base?Math.max(0,base-deduction):'—';}
+document.getElementById('recordStudent').addEventListener('change',updatePreview);document.getElementById('caseType').addEventListener('change',updatePreview);
+document.getElementById('recordForm').addEventListener('submit',event=>{event.preventDefault();const toast=document.getElementById('toast');toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2400);event.currentTarget.reset();updatePreview();});
+if(window.lucide)lucide.createIcons();
+</script>
+</body>
+</html>

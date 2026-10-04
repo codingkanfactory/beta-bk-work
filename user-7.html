@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>POIN TATIBSI — Portal Siswa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+/* ══════════════════════════════════════════════════════
+   POIN TATIBSI — PORTAL SISWA
+   Font: Plus Jakarta Sans
+   ══════════════════════════════════════════════════════ */
+:root {
+  --bg:       #080e0d;
+  --surface:  #0f1614;
+  --card:     #151e1c;
+  --border:   #1c2d2a;
+  --primary:  #0fba9d;
+  --pri2:     #0a8a75;
+  --accent:   #ff4d6d;
+  --warn:     #ffb830;
+  --success:  #22d68a;
+  --text:     #eaf4f2;
+  --sub:      #6b8f8b;
+  --muted:    #1e302e;
+  --r:        16px;
+  --rsm:      10px;
+  --nav:      64px;
+  --top:      54px;
+  --ease:     cubic-bezier(.4,0,.2,1);
+}
+[data-theme="light"] {
+  --bg:      #eef7f5;
+  --surface: #ffffff;
+  --card:    #f8fefd;
+  --border:  #cce5e1;
+  --text:    #0d2926;
+  --sub:     #5a8480;
+  --muted:   #ddf0ec;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);}
+button,input,textarea,select{font-family:inherit;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* ── SCREENS ─────────────────────────────────────────── */
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ── LOOKUP SCREEN ───────────────────────────────────── */
+#screen-lookup {
+  align-items:center;justify-content:center;padding:24px;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(15,186,157,.2) 0%, transparent 60%),
+    var(--bg);
+  min-height:100vh;
+}
+.lookup-card {
+  width:100%;max-width:380px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:24px;padding:36px 28px;
+  box-shadow:0 24px 60px rgba(0,0,0,.4);
+  animation:popIn .4s var(--ease);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.94) translateY(16px);}to{opacity:1;transform:scale(1) translateY(0);}}
+
+.brand-mark {
+  width:64px;height:64px;border-radius:20px;
+  background:linear-gradient(135deg,var(--primary),var(--pri2));
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;
+  box-shadow:0 8px 28px rgba(15,186,157,.35);
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
+.lookup-card h1{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;}
+.lookup-card .sub{font-size:13px;color:var(--sub);text-align:center;margin-bottom:28px;}
+
+.step-label {
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;font-weight:700;color:var(--sub);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;
+}
+.step-num{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--muted);color:var(--primary);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;flex-shrink:0;
+}
+
+.input-wrap{position:relative;margin-bottom:12px;}
+.input-wrap input{
+  width:100%;padding:13px 16px 13px 44px;
+  background:var(--bg);border:1.5px solid var(--border);
+  border-radius:var(--rsm);font-size:14px;color:var(--text);
+  outline:none;transition:border-color .2s;
+}
+.input-wrap input:focus{border-color:var(--primary);}
+.input-wrap input::placeholder{color:var(--sub);}
+.input-wrap .inp-icon{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:var(--sub);transition:color .2s;pointer-events:none;
+}
+.input-wrap input:focus ~ .inp-icon{color:var(--primary);}
+.input-wrap .inp-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);}
+
+/* password reveal box */
+.pw-reveal-box {
+  display:none;
+  background:linear-gradient(135deg,rgba(15,186,157,.08),rgba(15,186,157,.04));
+  border:1.5px solid var(--primary);border-radius:var(--rsm);
+  padding:16px;margin-bottom:14px;
+  animation:slideDown .3s var(--ease);
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+.pw-reveal-box.show{display:block;}
+.pw-label{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.pw-value{
+  font-size:26px;font-weight:800;font-family:monospace;
+  letter-spacing:4px;color:var(--primary);
+  display:flex;align-items:center;gap:10px;
+}
+.copy-btn{
+  padding:6px 12px;background:var(--primary);color:#000;
+  border:none;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;gap:4px;
+  transition:all .2s;
+}
+.copy-btn:hover{background:var(--pri2);color:#fff;transform:scale(1.05);}
+.copy-success{color:var(--success);font-size:12px;margin-top:6px;display:none;}
+
+/* ── BUTTONS ─────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:13px 18px;border:none;border-radius:var(--rsm);
+  font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .2s var(--ease);width:100%;
+}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--pri2));color:#000;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(15,186,157,.35);}
+.btn-primary:active{transform:translateY(0);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-ghost{background:var(--muted);color:var(--sub);}
+.btn-ghost:hover{background:var(--border);color:var(--text);}
+.btn-sm{padding:8px 14px;font-size:13px;}
+.btn-icon{padding:9px;border-radius:10px;width:auto;}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+
+.divider{height:1px;background:var(--border);margin:18px 0;position:relative;}
+.divider span{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:var(--surface);padding:0 10px;font-size:12px;color:var(--sub);
+}
+
+/* ── LOGIN SCREEN ────────────────────────────────────── */
+#screen-login{
+  align-items:center;justify-content:center;padding:24px;
+  background:
+    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(255,77,109,.1) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 20% 10%, rgba(15,186,157,.15) 0%, transparent 60%),
+    var(--bg);
+}
+.login-card{
+  width:100%;max-width:380px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:24px;padding:36px 28px;
+  box-shadow:0 24px 60px rgba(0,0,0,.4);
+  animation:popIn .4s var(--ease);
+}
+.login-card h1{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;}
+.login-card .sub{font-size:13px;color:var(--sub);text-align:center;margin-bottom:28px;}
+
+.hint-box{
+  background:var(--muted);border-radius:var(--rsm);padding:12px 14px;
+  margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;
+}
+.hint-box p{font-size:12px;color:var(--sub);line-height:1.6;}
+.hint-box strong{color:var(--primary);}
+
+/* ── APP SCREEN ──────────────────────────────────────── */
+#screen-app{background:var(--bg);}
+
+.top-bar{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:var(--top);
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+}
+.top-brand{display:flex;align-items:center;gap:10px;}
+.top-logo{
+  width:32px;height:32px;border-radius:10px;
+  background:linear-gradient(135deg,var(--primary),var(--pri2));
+  display:flex;align-items:center;justify-content:center;
+}
+.top-title{font-size:15px;font-weight:800;}
+.top-title span{color:var(--primary);}
+.top-actions{display:flex;gap:8px;}
+.icon-btn{
+  width:34px;height:34px;background:var(--muted);border:none;
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  color:var(--sub);cursor:pointer;transition:background .2s;
+}
+.icon-btn:hover{background:var(--border);}
+
+.page-wrap{
+  margin-top:var(--top);margin-bottom:var(--nav);
+  padding:16px;
+}
+
+/* ── BOTTOM NAV ──────────────────────────────────────── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  height:var(--nav);background:var(--surface);border-top:1px solid var(--border);
+  display:flex;align-items:stretch;padding:0 4px;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;border:none;background:none;color:var(--sub);
+  font-size:10px;font-weight:700;cursor:pointer;position:relative;
+  transition:color .2s;
+}
+.nav-item.active{color:var(--primary);}
+.nav-item.active::before{
+  content:'';position:absolute;top:0;left:15%;right:15%;height:2px;
+  background:var(--primary);border-radius:0 0 4px 4px;
+}
+.nav-item i{display:block;}
+
+/* ── PAGES ───────────────────────────────────────────── */
+.page{display:none;}
+.page.active{display:block;animation:fadeUp .25s var(--ease);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── DASHBOARD ───────────────────────────────────────── */
+.hero-card {
+  border-radius:20px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--pri2) 100%);
+}
+.hero-card::after{
+  content:'';position:absolute;right:-20px;top:-20px;
+  width:120px;height:120px;border-radius:50%;
+  background:rgba(255,255,255,.08);
+}
+.hero-card::before{
+  content:'';position:absolute;right:40px;bottom:-30px;
+  width:80px;height:80px;border-radius:50%;
+  background:rgba(255,255,255,.06);
+}
+.hero-greeting{font-size:13px;font-weight:600;color:rgba(0,0,0,.55);margin-bottom:4px;}
+.hero-name{font-size:22px;font-weight:800;color:#000;margin-bottom:2px;}
+.hero-meta{font-size:12px;color:rgba(0,0,0,.5);}
+.hero-points-wrap{margin-top:20px;}
+.hero-pts-num{font-size:52px;font-weight:800;color:#000;line-height:1;}
+.hero-pts-lbl{font-size:13px;font-weight:600;color:rgba(0,0,0,.55);margin-top:2px;}
+.hero-bar-wrap{margin-top:12px;}
+.hero-bar{height:8px;background:rgba(0,0,0,.15);border-radius:8px;overflow:hidden;}
+.hero-bar-fill{height:100%;border-radius:8px;background:rgba(0,0,0,.45);transition:width .8s var(--ease);}
+.hero-bar-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:rgba(0,0,0,.45);font-weight:600;}
+.hero-status{
+  display:inline-flex;align-items:center;gap:5px;margin-top:10px;
+  padding:5px 12px;border-radius:20px;background:rgba(0,0,0,.12);
+  font-size:12px;font-weight:700;color:#000;
+}
+
+.mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.mini-stat{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px;text-align:center;
+}
+.mini-stat-num{font-size:24px;font-weight:800;}
+.mini-stat-lbl{font-size:11px;color:var(--sub);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+
+.section-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.section-title{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;}
+.see-all{font-size:12px;font-weight:700;color:var(--primary);background:none;border:none;cursor:pointer;padding:0;}
+
+/* ── VIOLATION CARD ──────────────────────────────────── */
+.violation-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
+}
+.viol-badge{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  background:rgba(255,77,109,.1);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;
+}
+.viol-info{flex:1;min-width:0;}
+.viol-type{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.viol-date{font-size:11px;color:var(--sub);margin-top:2px;}
+.viol-pts{text-align:right;flex-shrink:0;}
+.viol-pts-num{font-size:18px;font-weight:800;color:var(--accent);}
+.viol-pts-lbl{font-size:10px;color:var(--sub);font-weight:600;}
+
+/* ── PROFILE ─────────────────────────────────────────── */
+.profile-avatar{
+  width:80px;height:80px;border-radius:22px;
+  background:linear-gradient(135deg,var(--primary),var(--pri2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;font-weight:800;color:#000;
+  margin:0 auto 16px;
+}
+.profile-name{font-size:20px;font-weight:800;text-align:center;margin-bottom:4px;}
+.profile-kelas{font-size:13px;color:var(--sub);text-align:center;margin-bottom:20px;}
+.info-row{
+  display:flex;align-items:center;gap:12px;padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.info-row:last-child{border-bottom:none;}
+.info-icon{color:var(--sub);flex-shrink:0;}
+.info-label{font-size:11px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.info-value{font-size:14px;font-weight:600;margin-top:2px;}
+
+/* ── ANNOUNCEMENTS ───────────────────────────────────── */
+.ann-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;margin-bottom:10px;
+}
+.ann-title{font-size:15px;font-weight:700;margin-bottom:6px;}
+.ann-body{font-size:13px;color:var(--sub);line-height:1.6;}
+.ann-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.ann-date{font-size:11px;color:var(--sub);}
+.ann-event{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
+  background:rgba(15,186,157,.1);border-radius:20px;color:var(--primary);
+  font-size:11px;font-weight:700;
+}
+
+/* ── POINTS RING ─────────────────────────────────────── */
+.ring-wrap{display:flex;justify-content:center;margin:16px 0;}
+.ring-svg{transform:rotate(-90deg);}
+.ring-circle-bg{fill:none;stroke:var(--muted);stroke-width:10;}
+.ring-circle-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s var(--ease);}
+
+/* ── EMPTY ───────────────────────────────────────────── */
+.empty{text-align:center;padding:40px 20px;color:var(--sub);}
+.empty h3{font-size:15px;font-weight:700;color:var(--text);margin:10px 0 4px;}
+.empty p{font-size:13px;}
+
+/* ── CARD ────────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);}
+.card-body{padding:16px;}
+
+/* ── BADGE ───────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-good{background:rgba(34,214,138,.12);color:var(--success);}
+.badge-warn{background:rgba(255,184,48,.15);color:var(--warn);}
+.badge-danger{background:rgba(255,77,109,.12);color:var(--accent);}
+.badge-critical{background:var(--accent);color:#fff;}
+
+
+/* ── SURAT PANGGILAN ─────────────────────────────────── */
+.sp-card{
+  background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);
+  padding:16px;margin-bottom:10px;
+}
+.sp-card.sp-danger{border-color:rgba(255,77,109,.4);background:rgba(255,77,109,.04);}
+.sp-card.sp-warn{border-color:rgba(255,184,48,.4);background:rgba(255,184,48,.04);}
+.sp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sp-type-badge{
+  padding:6px 14px;border-radius:20px;font-size:13px;font-weight:800;
+  background:var(--accent);color:#fff;
+}
+.sp-type-badge.sp1{background:rgba(255,184,48,.9);color:#000;}
+.sp-type-badge.sp2{background:rgba(255,120,50,.9);color:#000;}
+.sp-type-badge.sp3{background:var(--accent);color:#fff;}
+.sp-date{font-size:12px;color:var(--sub);}
+.sp-row{display:flex;gap:6px;font-size:13px;margin-bottom:4px;}
+.sp-row-label{color:var(--sub);min-width:90px;flex-shrink:0;}
+.sp-row-val{font-weight:600;}
+.sp-alert{
+  margin-top:12px;padding:10px 12px;border-radius:var(--rsm);
+  background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.2);
+  font-size:12px;color:var(--accent);display:flex;align-items:flex-start;gap:8px;
+}
+
+
+/* ── MODAL SURAT ─────────────────────────────────────── */
+.sp-modal-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.sp-modal-overlay.open{display:flex;animation:fadeIn .2s;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.sp-modal-sheet{
+  width:100%;max-width:520px;
+  background:var(--surface);border-radius:22px 22px 0 0;
+  border-top:1px solid var(--border);
+  max-height:92vh;display:flex;flex-direction:column;
+  animation:slideUp .28s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.sp-modal-handle{width:36px;height:4px;background:var(--border);border-radius:4px;margin:12px auto 0;}
+.sp-modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px 10px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sp-modal-header h3{font-size:16px;font-weight:800;}
+.sp-modal-body{flex:1;overflow-y:auto;padding:16px 20px;}
+.sp-modal-footer{
+  display:flex;gap:10px;padding:14px 20px;
+  border-top:1px solid var(--border);flex-shrink:0;
+  padding-bottom:calc(14px + env(safe-area-inset-bottom));
+}
+
+/* Preview surat cetak */
+.letter-print{
+  background:#fff;color:#000;border-radius:10px;
+  padding:20px 18px;font-size:12px;line-height:1.7;
+  border:1px solid var(--border);
+}
+.letter-print table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0;}
+.letter-print td{padding:3px 0;vertical-align:top;}
+.letter-print td:first-child{width:110px;color:#555;}
+.letter-print .letter-title{text-align:center;font-weight:800;font-size:14px;margin:10px 0 4px;}
+.letter-print .letter-sub{text-align:center;font-size:11px;color:#666;margin-bottom:12px;}
+.letter-print .letter-hr{border:none;border-top:2px solid #0fba9d;margin:8px 0 12px;}
+.letter-print .letter-school{text-align:center;margin-bottom:6px;}
+.letter-print .letter-school h2{font-size:14px;font-weight:800;margin-bottom:2px;}
+.letter-print .letter-school p{font-size:11px;color:#555;}
+.letter-print .letter-sign{display:flex;justify-content:space-between;margin-top:24px;}
+.letter-print .sign-col{text-align:center;width:45%;}
+.letter-print .sign-name{font-weight:800;margin-top:28px;border-top:1px solid #999;padding-top:4px;font-size:11px;}
+.letter-box{
+  background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.2);
+  border-radius:8px;padding:10px 12px;margin-top:10px;
+  font-size:12px;color:#333;
+}
+[data-theme="dark"] .letter-print{background:#fff;color:#000;}
+[data-theme="dark"] .letter-print .letter-box{background:rgba(255,77,109,.06);}
+
+/* ── TOAST ───────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:calc(var(--nav) + 16px);left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:10px 18px;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+  opacity:0;transition:all .3s var(--ease);pointer-events:none;z-index:999;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── LOADING SPINNER ─────────────────────────────────── */
+.spinner{
+  width:20px;height:20px;border:2px solid var(--border);
+  border-top-color:var(--primary);border-radius:50%;
+  animation:spin .7s linear infinite;display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── ALERTS ──────────────────────────────────────────── */
+.alert{
+  border-radius:var(--rsm);padding:12px 14px;margin-bottom:12px;
+  display:flex;align-items:flex-start;gap:10px;font-size:13px;
+}
+.alert-danger{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.2);color:var(--accent);}
+.alert-success{background:rgba(34,214,138,.1);border:1px solid rgba(34,214,138,.2);color:var(--success);}
+.alert-info{background:rgba(15,186,157,.1);border:1px solid rgba(15,186,157,.2);color:var(--primary);}
+
+/* ── KELAS SELECT ────────────────────────────────────── */
+.kelas-select-wrap{
+  position:relative;
+}
+.kelas-select-wrap select{
+  width:100%;padding:11px 36px 11px 14px;
+  background:var(--muted);border:1.5px solid var(--border);
+  border-radius:var(--rsm);font-size:14px;font-weight:600;
+  color:var(--text);outline:none;cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b8f8b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  transition:border-color .2s;
+  font-family:inherit;
+}
+.kelas-select-wrap select:focus{border-color:var(--primary);}
+.kelas-updated-badge{
+  display:none;align-items:center;gap:6px;
+  padding:8px 12px;border-radius:var(--rsm);margin-top:8px;
+  background:rgba(34,214,138,.1);border:1px solid rgba(34,214,138,.2);
+  font-size:12px;font-weight:600;color:var(--success);
+}
+.kelas-realtime-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--success);flex-shrink:0;
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 1: CARI PASSWORD (NISN → Tampil Password)
+════════════════════════════════════════════════════ -->
+<div id="screen-lookup" class="screen active">
+  <div class="lookup-card">
+    <div class="brand-mark">
+      <i data-lucide="shield-check" style="width:30px;height:30px;color:#000;"></i>
+    </div>
+    <h1>Portal Siswa</h1>
+    <p class="sub">POIN TATIBSI — Lihat poin & riwayat pelanggaranmu</p>
+
+    <!-- Step 1: Cari Password -->
+    <div id="step-lookup">
+      <div class="step-label">
+        <div class="step-num">1</div>
+        Masukkan NISN / UID kamu
+      </div>
+      <div class="input-wrap">
+        <input type="text" id="lookupNISN" placeholder="Contoh: 1234567890"
+          oninput="resetLookup()" onkeypress="if(event.key==='Enter')lookupPassword()">
+        <i data-lucide="id-card" class="inp-icon" style="width:17px;height:17px;"></i>
+      </div>
+
+      <!-- Hasil password -->
+      <div class="pw-reveal-box" id="pwRevealBox">
+        <div class="pw-label">Password kamu</div>
+        <div class="pw-value">
+          <span id="pwDisplay">—</span>
+          <button class="copy-btn" onclick="copyPassword()" id="copyBtn">
+            <i data-lucide="copy" style="width:13px;height:13px;"></i> Salin
+          </button>
+        </div>
+        <div class="copy-success" id="copySuccess">
+          <i data-lucide="check" style="width:12px;height:12px;vertical-align:middle;"></i>
+          Berhasil disalin!
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--sub);">
+          Gunakan <strong style="color:var(--text);">NISN/UID</strong> sebagai username &
+          password di atas untuk login.
+        </div>
+      </div>
+
+      <div id="lookupError" class="alert alert-danger" style="display:none;">
+        <i data-lucide="alert-circle" style="width:16px;height:16px;flex-shrink:0;margin-top:1px;"></i>
+        <span id="lookupErrorMsg">NISN tidak ditemukan.</span>
+      </div>
+
+      <button class="btn btn-primary" id="btnLookup" onclick="lookupPassword()">
+        <i data-lucide="search" style="width:16px;height:16px;"></i>
+        Lihat Password
+      </button>
+
+      <div class="divider"><span>sudah tahu password?</span></div>
+
+      <button class="btn btn-outline" onclick="showLoginScreen()">
+        <i data-lucide="log-in" style="width:16px;height:16px;"></i>
+        Langsung Login
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 2: LOGIN
+════════════════════════════════════════════════════ -->
+<div id="screen-login" class="screen">
+  <div class="login-card">
+    <div class="brand-mark">
+      <i data-lucide="log-in" style="width:28px;height:28px;color:#000;"></i>
+    </div>
+    <h1>Masuk</h1>
+    <p class="sub">Gunakan NISN/UID dan password kamu</p>
+
+    <div class="hint-box">
+      <i data-lucide="info" style="width:16px;height:16px;color:var(--primary);flex-shrink:0;margin-top:1px;"></i>
+      <p>Username = <strong>NISN / UID</strong> kamu.<br>
+      Belum tahu password? <button onclick="showLookupScreen()" style="background:none;border:none;color:var(--primary);font-weight:700;cursor:pointer;font-size:inherit;padding:0;">Klik di sini.</button></p>
+    </div>
+
+    <div id="loginError" class="alert alert-danger" style="display:none;">
+      <i data-lucide="alert-circle" style="width:16px;height:16px;flex-shrink:0;"></i>
+      <span id="loginErrMsg">Username atau password salah.</span>
+    </div>
+
+    <div class="input-wrap">
+      <input type="text" id="loginUID" placeholder="NISN / UID" autocomplete="username">
+      <i data-lucide="user" class="inp-icon" style="width:17px;height:17px;"></i>
+    </div>
+    <div class="input-wrap" style="margin-bottom:16px;">
+      <input type="password" id="loginPW" placeholder="Password"
+        autocomplete="current-password" onkeypress="if(event.key==='Enter')doLogin()">
+      <i data-lucide="lock" class="inp-icon" style="width:17px;height:17px;"></i>
+      <button onclick="toggleLoginPW()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--sub);" id="showPWBtn">
+        <i data-lucide="eye" style="width:17px;height:17px;" id="loginPWEye"></i>
+      </button>
+    </div>
+
+    <button class="btn btn-primary" id="btnLogin" onclick="doLogin()">
+      <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+      Masuk Sekarang
+    </button>
+
+    <div class="divider"><span>atau</span></div>
+
+    <button class="btn btn-ghost" onclick="showLookupScreen()">
+      <i data-lucide="key-round" style="width:15px;height:15px;"></i>
+      Cari Password Saya
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 3: APP (setelah login)
+════════════════════════════════════════════════════ -->
+<div id="screen-app" class="screen">
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="top-brand">
+      <div class="top-logo">
+        <i data-lucide="shield-check" style="width:16px;height:16px;color:#000;"></i>
+      </div>
+      <span class="top-title">POIN <span>TATIBSI</span></span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">
+        <i data-lucide="moon" style="width:16px;height:16px;" id="themeIcon"></i>
+      </button>
+      <button class="icon-btn" onclick="doLogout()">
+        <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Pages -->
+  <main class="page-wrap">
+
+    <!-- ── BERANDA ── -->
+    <div id="page-home" class="page active">
+
+      <!-- Hero card poin -->
+      <div class="hero-card" id="heroCard">
+        <div class="hero-greeting">Halo,</div>
+        <div class="hero-name" id="heroName">—</div>
+        <div class="hero-meta" id="heroMeta">—</div>
+        <div class="hero-points-wrap">
+          <div class="hero-pts-num" id="heroPts">—</div>
+          <div class="hero-pts-lbl">POIN TERSISA</div>
+          <div class="hero-bar-wrap">
+            <div class="hero-bar">
+              <div class="hero-bar-fill" id="heroBarFill" style="width:0%;"></div>
+            </div>
+            <div class="hero-bar-labels"><span>0</span><span>100</span></div>
+          </div>
+          <div class="hero-status" id="heroStatus">—</div>
+        </div>
+      </div>
+
+      <!-- Mini stats -->
+      <div class="mini-stats">
+        <div class="mini-stat">
+          <div class="mini-stat-num" id="statTotal" style="color:var(--accent);">0</div>
+          <div class="mini-stat-lbl">Total Kasus</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-num" id="statPoinDikurangi" style="color:var(--warn);">0</div>
+          <div class="mini-stat-lbl">Poin Dikurangi</div>
+        </div>
+      </div>
+
+      <!-- Pengumuman terbaru -->
+      <div class="section-hdr">
+        <span class="section-title">Pengumuman</span>
+        <button class="see-all" onclick="showPage('pengumuman')">Lihat semua</button>
+      </div>
+      <div id="homeAnns"></div>
+
+      <!-- SP Alert -->
+      <div id="homeSPAlert" style="display:none;"></div>
+
+      <!-- Pelanggaran terbaru -->
+      <div class="section-hdr" style="margin-top:16px;">
+        <span class="section-title">Pelanggaran Terakhir</span>
+        <button class="see-all" onclick="showPage('riwayat')">Lihat semua</button>
+      </div>
+      <div id="homeViolations"></div>
+    </div>
+
+    <!-- ── RIWAYAT ── -->
+    <div id="page-riwayat" class="page">
+      <div style="margin-bottom:16px;">
+        <h2 style="font-size:20px;font-weight:800;">Riwayat Pelanggaran</h2>
+        <p style="font-size:13px;color:var(--sub);margin-top:2px;">Semua catatan pelanggaran kamu</p>
+      </div>
+
+      <!-- Ring chart -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="text-align:center;">
+          <div class="ring-wrap">
+            <svg width="140" height="140" class="ring-svg">
+              <circle class="ring-circle-bg" cx="70" cy="70" r="58"/>
+              <circle class="ring-circle-fill" id="ringFill" cx="70" cy="70" r="58"
+                stroke="var(--primary)" stroke-dasharray="364.4" stroke-dashoffset="364.4"/>
+            </svg>
+          </div>
+          <div style="margin-top:-20px;">
+            <div style="font-size:36px;font-weight:800;" id="ringNum">0</div>
+            <div style="font-size:12px;color:var(--sub);font-weight:600;margin-top:2px;">POIN TERSISA</div>
+          </div>
+          <div style="margin-top:16px;display:flex;justify-content:center;gap:20px;font-size:13px;">
+            <div><span style="color:var(--sub);">Total Kasus</span><br><strong id="ringCases">0</strong></div>
+            <div><span style="color:var(--sub);">Poin Dikurangi</span><br><strong id="ringPts">0</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="riwayatList"></div>
+    </div>
+
+    <!-- ── PENGUMUMAN ── -->
+    <div id="page-pengumuman" class="page">
+      <div style="margin-bottom:16px;">
+        <h2 style="font-size:20px;font-weight:800;">Pengumuman</h2>
+        <p style="font-size:13px;color:var(--sub);margin-top:2px;">Informasi dari sekolah</p>
+      </div>
+      <div id="annList"></div>
+    </div>
+
+    <!-- ── PROFIL ── -->
+    <div id="page-profil" class="page">
+      <div style="margin-bottom:20px;text-align:center;">
+        <div class="profile-avatar" id="profAvatar">?</div>
+        <div class="profile-name" id="profName">—</div>
+        <div class="profile-kelas" id="profKelas">—</div>
+        <span class="badge" id="profBadge">—</span>
+      </div>
+
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-body">
+          <div class="info-row">
+            <i data-lucide="hash" class="info-icon" style="width:18px;height:18px;"></i>
+            <div><div class="info-label">NISN / UID</div><div class="info-value" id="profUID">—</div></div>
+          </div>
+          <div class="info-row">
+            <i data-lucide="phone" class="info-icon" style="width:18px;height:18px;"></i>
+            <div><div class="info-label">No. Telepon</div><div class="info-value" id="profPhone">—</div></div>
+          </div>
+          <div class="info-row">
+            <i data-lucide="map-pin" class="info-icon" style="width:18px;height:18px;"></i>
+            <div><div class="info-label">Alamat</div><div class="info-value" id="profAddress">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Kelas (realtime dari admin) -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;">Kelas</div>
+            <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--success);">
+              <div class="kelas-realtime-dot"></div>
+              <span>Realtime</span>
+            </div>
+          </div>
+          <div class="kelas-select-wrap">
+            <select id="kelasSelectUser" onchange="updateMyKelas()">
+              <option value="">Memuat daftar kelas...</option>
+            </select>
+          </div>
+          <div class="kelas-updated-badge" id="kelasUpdatedBadge">
+            <i data-lucide="check-circle" style="width:14px;height:14px;flex-shrink:0;"></i>
+            Kelas berhasil diperbarui!
+          </div>
+          <p style="font-size:11px;color:var(--sub);margin-top:8px;">
+            Pilih kelas sesuai yang ditentukan oleh admin/wali kelas.
+            Jika kelas berubah di sistem admin, halaman ini akan otomatis memperbarui.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-body">
+          <div style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">Ringkasan Poin</div>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;background:var(--muted);border-radius:var(--rsm);padding:12px;text-align:center;">
+              <div style="font-size:22px;font-weight:800;color:var(--success);" id="profPoinBaik">0</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:2px;">Poin Tersisa</div>
+            </div>
+            <div style="flex:1;background:var(--muted);border-radius:var(--rsm);padding:12px;text-align:center;">
+              <div style="font-size:22px;font-weight:800;color:var(--accent);" id="profPoinHilang">0</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:2px;">Poin Dikurangi</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-body">
+          <div style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">Akun</div>
+          <div class="info-row" style="padding-top:0;">
+            <i data-lucide="user" class="info-icon" style="width:18px;height:18px;"></i>
+            <div><div class="info-label">Username</div><div class="info-value" id="profUsername">—</div></div>
+          </div>
+          <div class="info-row">
+            <i data-lucide="lock" class="info-icon" style="width:18px;height:18px;"></i>
+            <div style="flex:1;">
+              <div class="info-label">Password</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                <span class="info-value" id="profPW" style="letter-spacing:2px;font-family:monospace;">••••••</span>
+                <button class="icon-btn" style="width:28px;height:28px;" onclick="toggleProfilePW()" id="profPWEyeBtn">
+                  <i data-lucide="eye" style="width:14px;height:14px;" id="profPWEye"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="width:100%;margin-bottom:24px;">
+        <i data-lucide="log-out" style="width:15px;height:15px;"></i>
+        Keluar
+      </button>
+    </div>
+
+    <!-- ── SURAT PANGGILAN ── -->
+    <div id="page-sp" class="page">
+      <div style="margin-bottom:16px;">
+        <h2 style="font-size:20px;font-weight:800;">Surat Panggilan</h2>
+        <p style="font-size:13px;color:var(--sub);margin-top:2px;">Surat panggilan orang tua yang pernah diterbitkan</p>
+      </div>
+      <div id="spList"></div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="showPage('home')">
+      <i data-lucide="home" style="width:22px;height:22px;"></i>
+      <span>Beranda</span>
+    </button>
+    <button class="nav-item" id="nav-riwayat" onclick="showPage('riwayat')">
+      <i data-lucide="file-clock" style="width:22px;height:22px;"></i>
+      <span>Riwayat</span>
+    </button>
+    <button class="nav-item" id="nav-sp" onclick="showPage('sp')">
+      <i data-lucide="file-warning" style="width:22px;height:22px;"></i>
+      <span>SP</span>
+    </button>
+    <button class="nav-item" id="nav-pengumuman" onclick="showPage('pengumuman')">
+      <i data-lucide="megaphone" style="width:22px;height:22px;"></i>
+      <span>Info</span>
+    </button>
+    <button class="nav-item" id="nav-profil" onclick="showPage('profil')">
+      <i data-lucide="user-circle" style="width:22px;height:22px;"></i>
+      <span>Profil</span>
+    </button>
+  </nav>
+
+</div><!-- /screen-app -->
+
+
+<!-- Modal Preview Surat Panggilan -->
+<div class="sp-modal-overlay" id="spModalOverlay" onclick="closeSpModal(event)">
+  <div class="sp-modal-sheet" onclick="event.stopPropagation()">
+    <div class="sp-modal-handle"></div>
+    <div class="sp-modal-header">
+      <h3>Surat Panggilan</h3>
+      <button class="icon-btn" onclick="closeSpModal()" style="width:32px;height:32px;">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+    <div class="sp-modal-body">
+      <div id="spModalContent"></div>
+    </div>
+    <div class="sp-modal-footer">
+      <button class="btn btn-ghost" onclick="closeSpModal()" style="flex:1;">
+        <i data-lucide="x" style="width:15px;height:15px;"></i> Tutup
+      </button>
+      <button class="btn btn-primary" onclick="downloadSpPDF()" style="flex:2;" id="btnDownloadSP">
+        <i data-lucide="download" style="width:15px;height:15px;"></i> Download PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <i data-lucide="check-circle" style="width:16px;height:16px;color:var(--success);"></i>
+  <span id="toastMsg">Berhasil!</span>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// FIREBASE
+// ════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:"AIzaSyDX882cvhwQgfhbsLFn69Q2l-TUQUR5IBk",
+  authDomain:"codingkan-factory-apps.firebaseapp.com",
+  databaseURL:"https://codingkan-factory-apps-default-rtdb.firebaseio.com",
+  projectId:"codingkan-factory-apps",
+  storageBucket:"codingkan-factory-apps.firebasestorage.app",
+  messagingSenderId:"188856222342",
+  appId:"1:188856222342:web:ae0e1873684da414cec707",
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ════════════════════════════════════════════════════
+// LAZY LOAD
+// ════════════════════════════════════════════════════
+function ensureJsPDF(){
+  if(window.jspdf) return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+// ════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════
+let currentStudent = null;
+let myCases        = [];
+let announcements  = [];
+let pwVisible      = false;
+let profPwVisible  = false;
+let myWarningLetters = [];
+let kelasList = [];
+
+// ════════════════════════════════════════════════════
+// THEME
+// ════════════════════════════════════════════════════
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme', isDark?'light':'dark');
+  localStorage.setItem('theme', isDark?'light':'dark');
+  updateThemeIcon(isDark?'light':'dark');
+}
+function updateThemeIcon(t){
+  const ic = document.getElementById('themeIcon');
+  if(ic){ ic.setAttribute('data-lucide', t==='dark'?'moon':'sun'); lucide.createIcons(); }
+}
+(function(){
+  const t = localStorage.getItem('theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  window.addEventListener('load',()=>updateThemeIcon(t));
+})();
+
+// ════════════════════════════════════════════════════
+// SCREEN ROUTING
+// ════════════════════════════════════════════════════
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  lucide.createIcons();
+}
+function showLoginScreen(){ showScreen('login'); }
+function showLookupScreen(){ showScreen('lookup'); }
+
+// ════════════════════════════════════════════════════
+// PAGE ROUTING (dalam app)
+// ════════════════════════════════════════════════════
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const nav = document.getElementById('nav-'+name);
+  if(nav) nav.classList.add('active');
+  if(name==='riwayat') renderRiwayat();
+  if(name==='sp') renderSP();
+  if(name==='pengumuman') renderAnnouncements();
+  if(name==='profil') renderProfil();
+  lucide.createIcons();
+}
+
+// ════════════════════════════════════════════════════
+// STEP 1 — LOOKUP PASSWORD
+// ════════════════════════════════════════════════════
+function resetLookup(){
+  document.getElementById('pwRevealBox').classList.remove('show');
+  document.getElementById('lookupError').style.display='none';
+}
+
+async function lookupPassword(){
+  const nisn = document.getElementById('lookupNISN').value.trim();
+  if(!nisn){ showLookupError('Masukkan NISN atau UID kamu dulu.'); return; }
+
+  const btn = document.getElementById('btnLookup');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> Mencari...';
+
+  try{
+    // Cari di users berdasarkan nisn atau uid
+    const snap = await db.ref('users').orderByChild('nisn').equalTo(nisn).once('value');
+    let found = null;
+    if(snap.exists()){
+      snap.forEach(c=>{ if(!found) found={id:c.key,...c.val()}; });
+    } else {
+      // Coba cari berdasarkan uid
+      const snap2 = await db.ref('users').orderByChild('uid').equalTo(nisn).once('value');
+      if(snap2.exists()) snap2.forEach(c=>{ if(!found) found={id:c.key,...c.val()}; });
+    }
+    // Coba direct key
+    if(!found){
+      const snap3 = await db.ref(`users/${nisn}`).once('value');
+      if(snap3.exists()){ found={id:nisn,...snap3.val()}; }
+    }
+
+    if(!found||!found.name){
+      showLookupError('NISN tidak ditemukan. Pastikan NISN/UID kamu benar.');
+      return;
+    }
+
+    const pw = found.password || '(belum diatur)';
+    document.getElementById('pwDisplay').textContent = pw;
+    document.getElementById('pwDisplay').dataset.pw  = pw;
+    document.getElementById('pwRevealBox').classList.add('show');
+    document.getElementById('lookupError').style.display='none';
+
+    // Pre-fill login form
+    document.getElementById('loginUID').value = nisn;
+    document.getElementById('loginPW').value  = pw !== '(belum diatur)' ? pw : '';
+
+  } catch(e){
+    showLookupError('Gagal terhubung ke server. Cek koneksi internet.');
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML='<i data-lucide="search" style="width:16px;height:16px;"></i> Lihat Password';
+    lucide.createIcons();
+  }
+}
+
+function showLookupError(msg){
+  const el = document.getElementById('lookupError');
+  document.getElementById('lookupErrorMsg').textContent = msg;
+  el.style.display='flex';
+  document.getElementById('pwRevealBox').classList.remove('show');
+}
+
+function copyPassword(){
+  const pw = document.getElementById('pwDisplay').dataset.pw || document.getElementById('pwDisplay').textContent;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(pw).then(()=>showCopySuccess());
+  } else {
+    const ta=document.createElement('textarea'); ta.value=pw;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); showCopySuccess();
+  }
+}
+function showCopySuccess(){
+  const el = document.getElementById('copySuccess');
+  const btn = document.getElementById('copyBtn');
+  el.style.display='flex'; el.style.alignItems='center'; el.style.gap='4px';
+  btn.innerHTML='<i data-lucide="check" style="width:13px;height:13px;"></i> Tersalin';
+  lucide.createIcons();
+  setTimeout(()=>{
+    el.style.display='none';
+    btn.innerHTML='<i data-lucide="copy" style="width:13px;height:13px;"></i> Salin';
+    lucide.createIcons();
+  }, 2500);
+}
+
+// ════════════════════════════════════════════════════
+// STEP 2 — LOGIN
+// ════════════════════════════════════════════════════
+function toggleLoginPW(){
+  const inp = document.getElementById('loginPW');
+  const eye = document.getElementById('loginPWEye');
+  const isHidden = inp.type==='password';
+  inp.type = isHidden?'text':'password';
+  eye.setAttribute('data-lucide', isHidden?'eye-off':'eye');
+  lucide.createIcons();
+}
+
+async function doLogin(){
+  const uid  = document.getElementById('loginUID').value.trim();
+  const pw   = document.getElementById('loginPW').value.trim();
+  if(!uid||!pw){ showLoginError('Isi NISN/UID dan password dulu.'); return; }
+
+  const btn = document.getElementById('btnLogin');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> Masuk...';
+
+  try{
+    // Cari user berdasarkan uid/nisn
+    let found=null;
+    const snap=await db.ref(`users/${uid}`).once('value');
+    if(snap.exists()){ found={id:uid,...snap.val()}; }
+    if(!found){
+      const s2=await db.ref('users').orderByChild('nisn').equalTo(uid).once('value');
+      if(s2.exists()) s2.forEach(c=>{if(!found)found={id:c.key,...c.val()};});
+    }
+    if(!found){
+      const s3=await db.ref('users').orderByChild('uid').equalTo(uid).once('value');
+      if(s3.exists()) s3.forEach(c=>{if(!found)found={id:c.key,...c.val()};});
+    }
+
+    if(!found){ showLoginError('NISN/UID tidak ditemukan.'); return; }
+    if(found.password !== pw){ showLoginError('Password salah. Cek kembali password kamu.'); return; }
+    if(!found.name){ showLoginError('Akun tidak valid.'); return; }
+
+    document.getElementById('loginError').style.display='none';
+    currentStudent = found;
+    enterApp();
+
+  } catch(e){
+    showLoginError('Gagal konek ke server.');
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML='<i data-lucide="arrow-right" style="width:16px;height:16px;"></i> Masuk Sekarang';
+    lucide.createIcons();
+  }
+}
+
+function showLoginError(msg){
+  const el=document.getElementById('loginError');
+  document.getElementById('loginErrMsg').textContent=msg;
+  el.style.display='flex';
+}
+
+// ════════════════════════════════════════════════════
+// ENTER APP
+// ════════════════════════════════════════════════════
+function enterApp(){
+  showScreen('app');
+  showPage('home');
+  loadMyCases();
+  loadMyWarningLetters();
+  loadAnnouncements();
+  loadKelasList();
+  listenMyStudentData();
+  renderHome();
+}
+
+function doLogout(){
+  currentStudent=null; myCases=[]; myWarningLetters=[]; announcements=[]; kelasList=[];
+  showLookupScreen();
+  document.getElementById('loginUID').value='';
+  document.getElementById('loginPW').value='';
+  document.getElementById('lookupNISN').value='';
+  document.getElementById('pwRevealBox').classList.remove('show');
+}
+
+
+// ════════════════════════════════════════════════════
+// KELAS — load dari Firebase & realtime update
+// ════════════════════════════════════════════════════
+
+function loadKelasList(){
+  db.ref('kelas').on('value', snap=>{
+    kelasList=[];
+    if(!snap.exists()){ populateKelasDropdown(); return; }
+
+    const raw=[];
+    snap.forEach(c=>{ const d=c.val(); raw.push({id:c.key,name:(d.name||'').trim(),waliKelas:d.waliKelas||'',createdAt:d.createdAt||0}); });
+
+    // Deduplikasi — tampilkan hanya satu per nama unik
+    const seen = new Map();
+    raw.sort((a,b)=>a.createdAt-b.createdAt);
+    for(const k of raw){
+      const key=k.name.toLowerCase();
+      if(!seen.has(key)) seen.set(key,k);
+    }
+    kelasList=[...seen.values()];
+    kelasList.sort((a,b)=>a.name.localeCompare(b.name));
+    populateKelasDropdown();
+  });
+}
+
+function populateKelasDropdown(){
+  const sel = document.getElementById('kelasSelectUser');
+  if(!sel) return;
+  const current = currentStudent?.kelas || '';
+  sel.innerHTML = '<option value="">-- Pilih Kelas --</option>' +
+    kelasList.map(k =>
+      `<option value="${k.name}" ${k.name===current?'selected':''}>${k.name}${k.waliKelas?' — '+k.waliKelas:''}</option>`
+    ).join('');
+}
+
+async function updateMyKelas(){
+  if(!currentStudent) return;
+  const sel = document.getElementById('kelasSelectUser');
+  const newKelas = sel?.value || '';
+  if(!newKelas){ sel.value = currentStudent.kelas||''; return; }
+  if(newKelas === currentStudent.kelas) return;
+
+  try{
+    // Simpan ke Firebase
+    await db.ref(`users/${currentStudent.id}/kelas`).set(newKelas);
+
+    // Update local state
+    currentStudent.kelas = newKelas;
+
+    // Update tampilan hero
+    document.getElementById('heroMeta').textContent =
+      newKelas + ' · NISN: ' + (currentStudent.nisn||currentStudent.uid||'—');
+
+    // Tampilkan badge sukses
+    const badge = document.getElementById('kelasUpdatedBadge');
+    if(badge){
+      badge.style.display = 'flex';
+      lucide.createIcons();
+      setTimeout(()=>badge.style.display='none', 3000);
+    }
+
+    showToast('Kelas diperbarui ke ' + newKelas, 'check-circle');
+
+  } catch(e){
+    showToast('Gagal menyimpan kelas', 'alert-circle');
+    sel.value = currentStudent.kelas || '';
+  }
+}
+
+function listenMyStudentData(){
+  // Realtime listener — jika admin ubah data siswa (termasuk kelas),
+  // portal user langsung update otomatis
+  if(!currentStudent) return;
+  db.ref(`users/${currentStudent.id}`).on('value', snap=>{
+    if(!snap.exists()) return;
+    const d = snap.val();
+
+    // Update currentStudent
+    const prevKelas = currentStudent.kelas;
+    currentStudent = { ...currentStudent, ...d, id: currentStudent.id };
+
+    // Jika kelas berubah dari admin → update dropdown + hero + profil
+    if(d.kelas !== prevKelas){
+      populateKelasDropdown();
+      const heroMeta = document.getElementById('heroMeta');
+      if(heroMeta) heroMeta.textContent = (d.kelas||'Tanpa Kelas') + ' · NISN: ' + (d.nisn||d.uid||'—');
+      const profKelas = document.getElementById('profKelas');
+      if(profKelas) profKelas.textContent = d.kelas||'Tanpa Kelas';
+      showToast('Kelas diperbarui oleh admin: ' + (d.kelas||'-'), 'refresh-cw');
+    }
+
+    // Update poin jika berubah (admin input kasus baru)
+    const heroPts = document.getElementById('heroPts');
+    if(heroPts && d.points !== undefined) heroPts.textContent = d.points;
+
+    // Re-render profil jika sedang di halaman profil
+    if(document.getElementById('page-profil').classList.contains('active')){
+      renderProfil();
+    }
+    // Re-render home jika di beranda
+    if(document.getElementById('page-home').classList.contains('active')){
+      renderHome();
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════
+function loadMyCases(){
+  if(!currentStudent) return;
+  const s = currentStudent;
+  // Kumpulkan semua ID yang mungkin jadi kunci: Firebase key, uid, nisn
+  const myIds = new Set([s.id, s.uid, s.nisn].filter(Boolean));
+
+  // Ambil SEMUA cases, filter di client karena field uid di cases bisa berisi
+  // Firebase key atau uid string tergantung bagaimana admin menyimpannya
+  db.ref('cases').on('value', snap=>{
+    myCases=[];
+    if(snap.exists()){
+      snap.forEach(c=>{
+        const d=c.val();
+        // Cek semua kemungkinan: uid field, studentId field, atau nama cocok
+        const caseUid = d.uid || d.studentId || '';
+        if(myIds.has(caseUid) || myIds.has(c.key)){
+          myCases.push({id:c.key,...d});
+        }
+      });
+    }
+    myCases.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+    renderHome();
+    if(document.getElementById('page-riwayat').classList.contains('active')) renderRiwayat();
+  });
+}
+
+function loadMyWarningLetters(){
+  if(!currentStudent) return;
+  const s = currentStudent;
+  const myIds = new Set([s.id, s.uid, s.nisn].filter(Boolean));
+
+  db.ref('warningLetters').on('value', snap=>{
+    myWarningLetters=[];
+    if(snap.exists()){
+      snap.forEach(c=>{
+        const d=c.val();
+        const wlId = d.studentId || d.studentUID || '';
+        // Hanya tampilkan jika sudah dikirim admin (visibleToUser===true)
+        // atau jika field tidak ada (backward-compat dengan data lama)
+        const isVisible = d.visibleToUser === true || d.visibleToUser === undefined;
+        if((myIds.has(wlId) || myIds.has(d.studentUID)) && isVisible){
+          myWarningLetters.push({id:c.key,...d});
+        }
+      });
+    }
+    myWarningLetters.sort((a,b)=>new Date(b.issuedDate||0)-new Date(a.issuedDate||0));
+    renderSP();
+    if(document.getElementById('page-home').classList.contains('active')) renderHomeSPAlert();
+    if(document.getElementById('page-sp').classList.contains('active')) renderSP();
+  });
+}
+
+function loadAnnouncements(){
+  db.ref('announcements').orderByChild('createdAt').on('value', snap=>{
+    announcements=[];
+    if(snap.exists()) snap.forEach(c=>announcements.push({id:c.key,...c.val()}));
+    announcements.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    if(document.getElementById('page-home').classList.contains('active')) renderHome();
+    if(document.getElementById('page-pengumuman').classList.contains('active')) renderAnnouncements();
+  });
+}
+
+// ════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════
+function fmtDate(str){
+  if(!str) return '-';
+  return new Date(str).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+}
+function getStatus(p){ if(p>=80) return{text:'Baik',cls:'badge-good',color:'var(--success)'}; if(p>=60) return{text:'Perhatian',cls:'badge-warn',color:'var(--warn)'}; if(p>=30) return{text:'Bahaya',cls:'badge-danger',color:'var(--accent)'}; return{text:'Kritis',cls:'badge-critical',color:'var(--accent)'}; }
+function initial(n){ return(n||'?')[0].toUpperCase(); }
+function showToast(msg, icon='check-circle'){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.querySelector('i').setAttribute('data-lucide',icon);
+  lucide.createIcons();
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ════════════════════════════════════════════════════
+// RENDER SURAT PANGGILAN
+// ════════════════════════════════════════════════════
+function renderHomeSPAlert(){
+  const el=document.getElementById('homeSPAlert');
+  if(!el) return;
+  if(!myWarningLetters.length){ el.style.display='none'; return; }
+  const latest=myWarningLetters[0];
+  const spClass=latest.spType==='SP 1'?'sp1':latest.spType==='SP 2'?'sp2':'sp3';
+  el.style.display='block';
+  el.innerHTML=`
+    <div class="sp-card ${latest.spType==='SP 3'?'sp-danger':'sp-warn'}" style="margin-bottom:14px;">
+      <div class="sp-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i data-lucide="file-warning" style="width:20px;height:20px;color:var(--accent);"></i>
+          <span style="font-size:14px;font-weight:800;">Kamu punya Surat Panggilan!</span>
+        </div>
+        <span class="sp-type-badge ${spClass}">${latest.spType}</span>
+      </div>
+      <p style="font-size:13px;color:var(--sub);margin-bottom:8px;">
+        Diterbitkan ${fmtDate(latest.issuedDate?.split('T')[0]||'')} oleh ${latest.issuedBy||'-'}
+      </p>
+      <button class="btn btn-outline btn-sm" onclick="showPage('sp')" style="width:100%;">
+        <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
+        Lihat Detail Surat Panggilan
+      </button>
+    </div>`;
+  lucide.createIcons();
+}
+
+// SP yang sedang dibuka di modal
+let currentSpData = null;
+
+function renderSP(){
+  const el=document.getElementById('spList');
+  if(!el) return;
+  if(!myWarningLetters.length){
+    el.innerHTML=`<div class="empty">
+      <i data-lucide="shield-check" style="width:44px;height:44px;color:var(--success);margin-bottom:10px;"></i>
+      <h3>Tidak ada surat panggilan</h3>
+      <p>Pertahankan perilaku baikmu! 👍</p>
+    </div>`;
+    lucide.createIcons(); return;
+  }
+  el.innerHTML=myWarningLetters.map((sp,idx)=>{
+    const spClass=sp.spType==='SP 1'?'sp1':sp.spType==='SP 2'?'sp2':'sp3';
+    const cardClass=sp.spType==='SP 3'?'sp-danger':'sp-warn';
+    return `<div class="sp-card ${cardClass}">
+      <div class="sp-header">
+        <div>
+          <span class="sp-type-badge ${spClass}">${sp.spType}</span>
+          <div class="sp-date" style="margin-top:6px;">${fmtDate(sp.issuedDate?.split('T')[0]||'')}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--sub);">Poin saat SP</div>
+          <div style="font-size:20px;font-weight:800;color:var(--accent);">${sp.currentPoints||'-'}</div>
+        </div>
+      </div>
+
+      <div style="background:var(--muted);border-radius:var(--rsm);padding:12px;margin-bottom:10px;">
+        <div class="sp-row"><span class="sp-row-label">Kelas</span><span class="sp-row-val">${sp.studentKelas||'-'}</span></div>
+        <div class="sp-row"><span class="sp-row-label">Poin Pelanggaran</span><span class="sp-row-val" style="color:var(--accent);">${sp.violationPoints||'-'}</span></div>
+        <div class="sp-row"><span class="sp-row-label">Jenis Kasus</span><span class="sp-row-val">${sp.caseDetails||'-'}</span></div>
+        <div class="sp-row"><span class="sp-row-label">Dicatat oleh</span><span class="sp-row-val">${sp.penulisKasus||'-'}</span></div>
+        <div class="sp-row"><span class="sp-row-label">Diterbitkan</span><span class="sp-row-val">${sp.issuedBy||'-'}</span></div>
+      </div>
+
+      <div style="background:var(--muted);border-radius:var(--rsm);padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Jadwal Pertemuan</div>
+        <div class="sp-row"><span class="sp-row-label">Tanggal</span><span class="sp-row-val">${fmtDate(sp.meetingDate)||'-'}</span></div>
+        <div class="sp-row"><span class="sp-row-label">Waktu</span><span class="sp-row-val">${sp.meetingTime||'-'}</span></div>
+        <div class="sp-row"><span class="sp-row-label">Sekolah</span><span class="sp-row-val">${sp.schoolName||'-'}</span></div>
+        <div class="sp-row"><span class="sp-row-label">Alamat</span><span class="sp-row-val">${sp.schoolAddress||'-'}</span></div>
+      </div>
+
+      <div class="sp-alert" style="margin-bottom:12px;">
+        <i data-lucide="alert-triangle" style="width:15px;height:15px;flex-shrink:0;margin-top:1px;"></i>
+        <span>Harap orang tua/wali hadir sesuai jadwal. Hubungi pihak sekolah jika ada kendala.</span>
+      </div>
+
+      <!-- Tombol aksi -->
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline" style="flex:1;padding:10px;" onclick="openSpModal(${idx})">
+          <i data-lucide="eye" style="width:15px;height:15px;"></i> Lihat Surat
+        </button>
+        <button class="btn btn-primary" style="flex:1;padding:10px;" onclick="downloadSpPDFDirect(${idx})">
+          <i data-lucide="download" style="width:15px;height:15px;"></i> Download PDF
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+// ════════════════════════════════════════════════════
+// MODAL PREVIEW SURAT
+// ════════════════════════════════════════════════════
+function openSpModal(idx){
+  const sp = myWarningLetters[idx];
+  if(!sp) return;
+  currentSpData = sp;
+
+  const s = currentStudent;
+  const today = new Date(sp.issuedDate||Date.now()).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const spClass = sp.spType==='SP 1'?'sp1':sp.spType==='SP 2'?'sp2':'sp3';
+  const logoHtml = sp.schoolLogoBase64
+    ? `<img src="${sp.schoolLogoBase64}" style="max-width:60px;max-height:50px;margin-bottom:6px;">`
+    : `<div style="width:52px;height:52px;border-radius:12px;background:#0fba9d;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:22px;color:#000;">🏫</div>`;
+
+  document.getElementById('spModalContent').innerHTML = `
+    <div class="letter-print" id="letterPreviewEl">
+      <!-- Kop surat -->
+      <div class="letter-school">
+        ${logoHtml}
+        <h2>${sp.schoolName||'Nama Sekolah'}</h2>
+        <p>${sp.schoolAddress||'Alamat Sekolah'}</p>
+      </div>
+      <div class="letter-hr"></div>
+
+      <!-- Judul -->
+      <div class="letter-title">SURAT PANGGILAN ORANG TUA / WALI SISWA</div>
+      <div class="letter-sub">(${sp.spType})</div>
+
+      <!-- Pembuka -->
+      <p style="margin:10px 0 6px;">Kepada Yth.<br>
+      <strong>Bapak/Ibu Orang Tua/Wali</strong><br>
+      Siswa atas nama: <strong>${sp.studentName||s?.name||'-'}</strong></p>
+
+      <p style="margin-bottom:10px;">Dengan hormat, kami memberitahukan bahwa putra/putri Bapak/Ibu:</p>
+
+      <!-- Tabel data siswa -->
+      <table>
+        <tr><td>Nama</td><td>: <strong>${sp.studentName||s?.name||'-'}</strong></td></tr>
+        <tr><td>NISN/UID</td><td>: ${sp.studentUID||s?.uid||'-'}</td></tr>
+        <tr><td>Kelas</td><td>: ${sp.studentKelas||'-'}</td></tr>
+        <tr><td>Poin Pelanggaran</td><td>: <strong style="color:#ff4d6d;">${sp.violationPoints||'-'}</strong></td></tr>
+        <tr><td>Poin Saat Ini</td><td>: ${sp.currentPoints||'-'}</td></tr>
+        ${sp.penulisKasus?`<tr><td>Penulis Kasus</td><td>: ${sp.penulisKasus}</td></tr>`:''}
+        ${sp.caseDetails?`<tr><td>Jenis Kasus</td><td>: ${sp.caseDetails}</td></tr>`:''}
+      </table>
+
+      <!-- Isi surat -->
+      <p style="margin:10px 0;">Telah melakukan pelanggaran tata tertib sekolah sehingga mendapatkan <strong>${sp.spType}</strong>.</p>
+      <p style="margin-bottom:10px;">Sehubungan dengan hal tersebut, kami mengharapkan kehadiran Bapak/Ibu di sekolah pada:</p>
+
+      <div class="letter-box">
+        <table>
+          <tr><td style="width:80px;">Tanggal</td><td>: <strong>${fmtDate(sp.meetingDate)||'-'}</strong></td></tr>
+          <tr><td>Pukul</td><td>: <strong>${sp.meetingTime||'-'} WIB</strong></td></tr>
+          <tr><td>Tempat</td><td>: <strong>${sp.schoolName||'-'}</strong></td></tr>
+        </table>
+      </div>
+
+      <p style="margin-top:10px;margin-bottom:6px;">Demikian surat panggilan ini kami sampaikan. Atas perhatian dan kerjasamanya, kami ucapkan terima kasih.</p>
+
+      <!-- Tanda tangan -->
+      <div style="margin-top:6px;text-align:right;font-size:11px;color:#555;">
+        ${sp.schoolAddress||''}, ${today}
+      </div>
+      <div class="letter-sign">
+        <div class="sign-col">
+          <div style="font-size:11px;color:#555;">Mengetahui,</div>
+          <div style="font-size:11px;color:#555;">Kepala Sekolah</div>
+          <div class="sign-name">${sp.principalName||'Kepala Sekolah'}</div>
+          <div style="font-size:10px;color:#777;">NIP. ${sp.principalNIP||'-'}</div>
+        </div>
+        <div class="sign-col">
+          <div style="font-size:11px;color:#555;">Guru BK,</div>
+          <div style="font-size:11px;color:#555;">&nbsp;</div>
+          <div class="sign-name">${sp.issuedBy||'Guru BK'}</div>
+          <div style="font-size:10px;color:#777;">Guru Bimbingan Konseling</div>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('spModalOverlay').classList.add('open');
+  lucide.createIcons();
+}
+
+function closeSpModal(e){
+  if(e && e.target !== document.getElementById('spModalOverlay')) return;
+  document.getElementById('spModalOverlay').classList.remove('open');
+  currentSpData = null;
+}
+
+async function downloadSpPDF(){
+  if(!currentSpData) return;
+  await _generateSpPDF(currentSpData);
+}
+
+async function downloadSpPDFDirect(idx){
+  const sp = myWarningLetters[idx];
+  if(!sp) return;
+  await _generateSpPDF(sp);
+}
+
+async function _generateSpPDF(sp){
+  const btn = document.getElementById('btnDownloadSP');
+  if(btn){ btn.disabled=true; btn.innerHTML='<i data-lucide="loader" style="width:15px;height:15px;"></i> Membuat PDF...'; lucide.createIcons(); }
+
+  await ensureJsPDF();
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF();
+  const pw  = doc.internal.pageSize.getWidth();
+  const m   = 20;
+  let y = 12;
+
+  // Garis atas hijau
+  doc.setFillColor(15,186,157);
+  doc.rect(0, 0, pw, 4, 'F');
+
+  // Kop
+  y = 16;
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text(sp.schoolName||'Nama Sekolah', pw/2, y, {align:'center'});
+  y += 6; doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(sp.schoolAddress||'-', pw/2, y, {align:'center'});
+  y += 5;
+  doc.setDrawColor(15,186,157); doc.setLineWidth(.8);
+  doc.line(m, y, pw-m, y);
+
+  // Judul
+  y += 8; doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text('SURAT PANGGILAN ORANG TUA / WALI SISWA', pw/2, y, {align:'center'});
+  y += 6; doc.setFontSize(10);
+  doc.text(`(${sp.spType})`, pw/2, y, {align:'center'});
+
+  // Pembuka
+  y += 10; doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text('Kepada Yth.', m, y);
+  y += 5; doc.text('Bapak/Ibu Orang Tua/Wali Siswa atas nama:', m, y);
+  y += 5; doc.setFont('helvetica','bold');
+  doc.text(sp.studentName||currentStudent?.name||'-', m+5, y);
+  doc.setFont('helvetica','normal');
+
+  // Data siswa
+  y += 8;
+  const rows = [
+    ['Nama', sp.studentName||currentStudent?.name||'-'],
+    ['NISN/UID', sp.studentUID||currentStudent?.uid||'-'],
+    ['Kelas', sp.studentKelas||'-'],
+    ['Poin Pelanggaran', String(sp.violationPoints||'-')],
+    ['Poin Saat Ini', String(sp.currentPoints||'-')],
+    ['Jenis Kasus', sp.caseDetails||'-'],
+    ['Penulis Kasus', sp.penulisKasus||'-'],
+  ];
+  rows.forEach(([k,v])=>{
+    doc.text(k+' :', m, y); doc.text(v, m+48, y); y+=6;
+  });
+
+  // Isi surat
+  y += 3;
+  doc.text(`Telah melakukan pelanggaran tata tertib sekolah sehingga mendapatkan ${sp.spType}.`, m, y, {maxWidth:pw-m*2});
+  y += 10;
+  doc.text('Kami mengharapkan kehadiran Bapak/Ibu di sekolah pada:', m, y);
+
+  // Kotak jadwal
+  y += 6;
+  doc.setFillColor(255,240,242); doc.setDrawColor(255,77,109);
+  doc.roundedRect(m, y, pw-m*2, 22, 3, 3, 'FD');
+  y += 6; doc.setFont('helvetica','bold');
+  doc.text('Tanggal : '+( fmtDate(sp.meetingDate)||'-' ), m+4, y);
+  y += 6; doc.text('Pukul   : '+(sp.meetingTime||'-')+' WIB', m+4, y);
+  y += 6; doc.text('Tempat : '+(sp.schoolName||'-'), m+4, y);
+  doc.setFont('helvetica','normal');
+
+  // Penutup
+  y += 10;
+  const today = new Date(sp.issuedDate||Date.now()).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  doc.text(`Demikian surat ini kami sampaikan. Atas perhatian Bapak/Ibu, kami ucapkan terima kasih.`, m, y, {maxWidth:pw-m*2});
+  y += 14;
+  doc.text(`${sp.schoolAddress||''}, ${today}`, pw-m, y, {align:'right'});
+
+  // Tanda tangan
+  y += 8;
+  const sigL=m+10, sigR=pw-m-40;
+  doc.text('Mengetahui,', sigL, y); doc.text('Guru BK,', sigR, y);
+  y += 4; doc.text('Kepala Sekolah', sigL, y);
+  y += 26; doc.setFont('helvetica','bold');
+  doc.text(sp.principalName||'Kepala Sekolah', sigL, y);
+  doc.text(sp.issuedBy||'Guru BK', sigR, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8);
+  y += 4; doc.text('NIP. '+(sp.principalNIP||'-'), sigL, y);
+  doc.text('Guru Bimbingan Konseling', sigR, y);
+
+  // Garis bawah hijau
+  const ph = doc.internal.pageSize.getHeight();
+  doc.setFillColor(15,186,157);
+  doc.rect(0, ph-4, pw, 4, 'F');
+
+  doc.save(`SP_${sp.spType?.replace(' ','_')}_${sp.studentName||'Siswa'}.pdf`);
+
+  if(btn){
+    btn.disabled=false;
+    btn.innerHTML='<i data-lucide="download" style="width:15px;height:15px;"></i> Download PDF';
+    lucide.createIcons();
+  }
+  showToast('PDF berhasil diunduh!','download');
+}
+
+// ════════════════════════════════════════════════════
+// RENDER HOME
+// ════════════════════════════════════════════════════
+function renderHome(){
+  if(!currentStudent) return;
+  const s = currentStudent;
+  const pts = s.points !== undefined ? s.points : 100;
+  const totalDeducted = myCases.reduce((acc,c)=>acc+(c.pointsDeducted||0),0);
+  const st = getStatus(pts);
+
+  // Hero
+  document.getElementById('heroName').textContent = s.name || '—';
+  document.getElementById('heroMeta').textContent = (s.kelas||'Tanpa Kelas') + ' · NISN: ' + (s.nisn||s.uid||'—');
+  document.getElementById('heroPts').textContent  = pts;
+  document.getElementById('heroBarFill').style.width = Math.max(0,Math.min(100,pts)) + '%';
+  document.getElementById('heroStatus').innerHTML = `<i data-lucide="activity" style="width:13px;height:13px;"></i> Status: ${st.text}`;
+
+  // Warna hero berdasarkan status
+  const heroColors = {
+    'Baik':'linear-gradient(135deg,#0fba9d 0%,#0a8a75 100%)',
+    'Perhatian':'linear-gradient(135deg,#ffb830 0%,#e69500 100%)',
+    'Bahaya':'linear-gradient(135deg,#ff7043 0%,#e53935 100%)',
+    'Kritis':'linear-gradient(135deg,#ff4d6d 0%,#c0003c 100%)',
+  };
+  document.getElementById('heroCard').style.background = heroColors[st.text] || heroColors['Baik'];
+
+  // Mini stats
+  document.getElementById('statTotal').textContent = myCases.length;
+  document.getElementById('statPoinDikurangi').textContent = totalDeducted;
+
+  // Pengumuman terbaru (max 2)
+  const anEl=document.getElementById('homeAnns');
+  if(!announcements.length){
+    anEl.innerHTML='<div style="font-size:13px;color:var(--sub);padding:8px 0;">Belum ada pengumuman.</div>';
+  } else {
+    anEl.innerHTML=announcements.slice(0,2).map(a=>`
+      <div class="ann-card">
+        <div class="ann-title">${a.title}</div>
+        <div class="ann-body" style="-webkit-line-clamp:2;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden;">${a.content}</div>
+        <div class="ann-footer"><span class="ann-date">${fmtDate(new Date(a.createdAt).toISOString().split('T')[0])}</span>
+        ${a.eventName?`<span class="ann-event"><i data-lucide="flag" style="width:10px;height:10px;"></i>${a.eventName}</span>`:''}
+        </div>
+      </div>`).join('');
+  }
+
+  // Pelanggaran terbaru (max 3)
+  const vlEl=document.getElementById('homeViolations');
+  if(!myCases.length){
+    vlEl.innerHTML=`<div class="empty"><i data-lucide="check-circle-2" style="width:36px;height:36px;color:var(--success);margin-bottom:8px;"></i><h3>Tidak ada pelanggaran</h3><p>Pertahankan terus!</p></div>`;
+  } else {
+    vlEl.innerHTML=myCases.slice(0,3).map(c=>`
+      <div class="violation-card">
+        <div class="viol-badge">-${c.pointsDeducted}</div>
+        <div class="viol-info">
+          <div class="viol-type">${c.caseType}</div>
+          <div class="viol-date">${fmtDate(c.date)}${c.details?` · ${c.details.substring(0,30)}...`:''}</div>
+        </div>
+        <div class="viol-pts">
+          <div class="viol-pts-num">${c.finalPoints}</div>
+          <div class="viol-pts-lbl">sisa</div>
+        </div>
+      </div>`).join('');
+  }
+
+  renderHomeSPAlert();
+  lucide.createIcons();
+}
+
+// ════════════════════════════════════════════════════
+// RENDER RIWAYAT
+// ════════════════════════════════════════════════════
+function renderRiwayat(){
+  if(!currentStudent) return;
+  const pts = currentStudent.points||100;
+  const totalDeducted = myCases.reduce((acc,c)=>acc+(c.pointsDeducted||0),0);
+
+  // Ring
+  const circumference = 2 * Math.PI * 58; // 364.4
+  const offset = circumference - (pts/100)*circumference;
+  const ringFill=document.getElementById('ringFill');
+  if(ringFill){
+    const st=getStatus(pts);
+    ringFill.style.stroke = st.color;
+    ringFill.style.strokeDashoffset = offset;
+  }
+  document.getElementById('ringNum').textContent = pts;
+  document.getElementById('ringCases').textContent = myCases.length;
+  document.getElementById('ringPts').textContent   = totalDeducted;
+
+  const el=document.getElementById('riwayatList');
+  if(!myCases.length){
+    el.innerHTML=`<div class="empty"><i data-lucide="shield-check" style="width:40px;height:40px;color:var(--success);margin-bottom:10px;"></i><h3>Belum ada pelanggaran tercatat</h3><p>Pertahankan perilaku baikmu!</p></div>`;
+    lucide.createIcons(); return;
+  }
+  el.innerHTML=myCases.map(c=>`
+    <div class="violation-card" style="margin-bottom:8px;">
+      <div class="viol-badge">-${c.pointsDeducted}</div>
+      <div class="viol-info">
+        <div class="viol-type">${c.caseType}</div>
+        <div class="viol-date">${fmtDate(c.date)}</div>
+        ${c.details?`<div style="font-size:11px;color:var(--sub);margin-top:3px;display:flex;align-items:flex-start;gap:4px;"><i data-lucide="file-text" style="width:11px;height:11px;flex-shrink:0;margin-top:1px;"></i><span>${c.details}</span></div>`:''}
+        <div style="font-size:11px;color:var(--sub);margin-top:2px;">Dicatat: ${c.penulisKasus||'-'}</div>
+      </div>
+      <div class="viol-pts">
+        <div class="viol-pts-num" style="font-size:14px;display:flex;align-items:center;gap:3px;">${c.initialPoints}<i data-lucide="arrow-right" style="width:11px;height:11px;color:var(--sub);"></i>${c.finalPoints}</div>
+        <div class="viol-pts-lbl">poin</div>
+      </div>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+// ════════════════════════════════════════════════════
+// RENDER PENGUMUMAN
+// ════════════════════════════════════════════════════
+function renderAnnouncements(){
+  const el=document.getElementById('annList');
+  if(!el) return;
+  if(!announcements.length){
+    el.innerHTML=`<div class="empty"><i data-lucide="megaphone" style="width:40px;height:40px;color:var(--sub);margin-bottom:10px;"></i><h3>Belum ada pengumuman</h3></div>`;
+    lucide.createIcons(); return;
+  }
+  el.innerHTML=announcements.map(a=>`
+    <div class="ann-card">
+      <div class="ann-title">${a.title}</div>
+      <div class="ann-body">${a.content}</div>
+      ${a.eventName||a.startDate||a.endDate?`
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+        ${a.eventName?`<span class="ann-event"><i data-lucide="flag" style="width:10px;height:10px;"></i>${a.eventName}</span>`:''}
+        ${a.startDate?`<span style="font-size:11px;color:var(--sub);display:inline-flex;align-items:center;gap:3px;"><i data-lucide="calendar" style="width:11px;height:11px;"></i>${fmtDate(a.startDate)}</span>`:''}
+        ${a.endDate?`<span style="font-size:11px;color:var(--sub);display:inline-flex;align-items:center;gap:3px;"><i data-lucide="arrow-right" style="width:11px;height:11px;"></i>${fmtDate(a.endDate)}</span>`:''}
+      </div>`:''}
+      <div class="ann-footer">
+        <span class="ann-date">🕒 ${fmtDate(new Date(a.createdAt||Date.now()).toISOString().split('T')[0])}</span>
+      </div>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+// ════════════════════════════════════════════════════
+// RENDER PROFIL
+// ════════════════════════════════════════════════════
+function renderProfil(){
+  if(!currentStudent) return;
+  const s=currentStudent;
+  const pts=s.points||100;
+  const totalDeducted=myCases.reduce((acc,c)=>acc+(c.pointsDeducted||0),0);
+  const st=getStatus(pts);
+
+  document.getElementById('profAvatar').textContent  = initial(s.name);
+  document.getElementById('profName').textContent    = s.name||'—';
+  document.getElementById('profKelas').textContent   = (s.kelas||'Tanpa Kelas');
+  populateKelasDropdown();
+  document.getElementById('profBadge').className     = 'badge '+st.cls;
+  document.getElementById('profBadge').textContent   = `${pts} Poin · ${st.text}`;
+  document.getElementById('profUID').textContent     = s.nisn||s.uid||'—';
+  document.getElementById('profPhone').textContent   = s.phone||'Belum diisi';
+  document.getElementById('profAddress').textContent = s.address||'Belum diisi';
+  document.getElementById('profPoinBaik').textContent   = pts;
+  document.getElementById('profPoinHilang').textContent = totalDeducted;
+  document.getElementById('profUsername').textContent= s.username||s.nisn||s.uid||'—';
+
+  const pwEl=document.getElementById('profPW');
+  pwEl.textContent='••••••';
+  pwEl.style.letterSpacing='2px';
+  pwEl.dataset.pw = s.password||'';
+  profPwVisible=false;
+  lucide.createIcons();
+}
+
+function toggleProfilePW(){
+  const el=document.getElementById('profPW');
+  const eye=document.getElementById('profPWEye');
+  profPwVisible=!profPwVisible;
+  el.textContent=profPwVisible?(el.dataset.pw||'—'):'••••••';
+  el.style.letterSpacing=profPwVisible?'normal':'2px';
+  eye.setAttribute('data-lucide',profPwVisible?'eye-off':'eye');
+  lucide.createIcons();
+  if(profPwVisible) showToast('Password terlihat','eye');
+}
+
+// ════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  lucide.createIcons();
+});
+</script>
+</body>
+</html>
