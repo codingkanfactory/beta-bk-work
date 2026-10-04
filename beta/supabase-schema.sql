@@ -245,8 +245,10 @@ $$;
 revoke all on function public.lookup_school_by_code(text) from public;
 grant execute on function public.lookup_school_by_code(text) to anon, authenticated;
 
-create or replace function public.claim_school_membership(p_school_code text, p_full_name text default null)
-returns table(school_id uuid, school_name text)
+drop function if exists public.claim_school_membership(text, text);
+
+create function public.claim_school_membership(p_school_code text, p_full_name text default null)
+returns table(id uuid, name text)
 language plpgsql
 security definer
 set search_path = public, auth, pg_temp
